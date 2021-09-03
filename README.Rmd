@@ -1,0 +1,56 @@
+---
+title: "DFAmethods2"
+author: "Ikaro Daniel de Carvalho Barreto, Luiz Henrique Dore e Antonio Samuel Alves da Silva"
+date: "03/09/2021"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{DFAmethods2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+**DFAMethods2** is a package for Detrended Fluctuation like-Analysis. In this package we developed methods such as:
+
+**Detrended Fluctuation Analysis**  
+**Detrended Cros-Correlation Analysis**  
+**Detrended Cros-Correlation Coefficient**  
+**Detrended Partial Cros-Correlation Coefficient**  
+**Detrended Multiple Linear Regression**  
+**Beta DFA estimates**  
+**Standardized Beta DFA estimates**  
+**f² scale-wise effect size**  
+**Shen-Podobnik Test**  
+**Kristoufek Test**  
+**Intersection-Union Test**  
+
+```{r setup}
+library(DFAmethods2)
+```
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+# 1. Detrended Fluctuation Analysis
+
+# 2. Detrended Cros-Correlation Analysis
+
+# 3. Detrended Cros-Correlation Coefficient
+
+# 4. Detrended Partial Cros-Correlation Coefficient
+
+# 5. Detrended Multiple Linear Regression
+
+# 6. Beta DFA estimates
+
+# 7. Standardized Beta DFA estimates
+
+# 8. f² scale-wise effect size
+
+# 9. Shen-Podobnik Test
+
+# 10. Kristoufek Test
+
+# 11. Intersection-Union Test
+
