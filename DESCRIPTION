@@ -29,3 +29,5 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+URL: https://github.com/Ikarobarreto/DFAmethods2
+BugReports: https://github.com/Ikarobarreto/DFAmethods2/issues
