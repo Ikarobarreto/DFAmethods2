@@ -86,7 +86,7 @@ fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 #DPCCA
 pn<-array(,dim=c(nc,nc,np)) #pDCCA
 dp<-array(,dim=c(nc,nc,np)) #pDPCCA
-for(i in 1:(np-1)){
+for(i in 1:(np)){
 	pn[,,i]<-cov2cor(fn[,,i])
 	dp[,,i]<-cor2pcor(pn[,,i])
 	}
@@ -117,7 +117,8 @@ u1<-NULL
 }
 for(k in 1:np){
 	for(i in (2:nc)){
-		vn[,(i-1),k]<-(un[1,1,k]/fn[i,i,k])*(1/(size))
+	  vn[,(i-1),k]<-((fn[1,1,k]-dmc2[k]*fn[1,1,k])/(fn[i,i,k]))*(1/(sn[[k]]-nc-2))
+	  #vn[,(i-1),k]<-(un[1,1,k]/fn[i,i,k])*(1/(size))
 		}}
 for(k in 1:np){
 	for(i in 1:(nc-1)){
