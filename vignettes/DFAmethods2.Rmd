@@ -34,23 +34,229 @@ knitr::opts_chunk$set(
 ```
 # 1. Detrended Fluctuation Analysis
 
+The Detrended Fluctuation Analysis (DFA) is a method used to quantify long-range correlations in time series.
+
+```{r}
+# Generate a sample time series
+data <- rnorm(1000)
+
+# Calculate DFA
+dfa_result <- dfa(data)
+
+# Print the first few rows of the result
+head(dfa_result)
+```
+
 # 2. Detrended Cros-Correlation Analysis
+
+The Detrended Cross-Correlation Analysis (DCCA) is a method to quantify long-range cross-correlations between two non-stationary time series.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Calculate DCCA using the fracreg function
+dcca_result <- fracreg(data, dpo = 1, int = TRUE)
+
+# The DCCA results are in the 'F' component of the list
+head(dcca_result$F)
+```
 
 # 3. Detrended Cros-Correlation Coefficient
 
+The Detrended Cross-Correlation Coefficient (rho-DCCA) is a measure of the strength of cross-correlation.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Calculate rho-DCCA
+rhodcca_result <- rhodcca(data)
+
+# Print the first few rows of the result
+head(rhodcca_result)
+```
+
 # 4. Detrended Partial Cros-Correlation Coefficient
 
-# 5. Detrended Multiple Linear Regression
+The Detrended Partial Cross-Correlation Coefficient (rho-DPCCA) is a measure of the strength of cross-correlation between two time series after removing the effect of other time series.
 
-# 6. Beta DFA estimates
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
 
-# 7. Standardized Beta DFA estimates
+# Calculate rho-DPCCA
+rhodpcca_result <- rhodpcca(data)
 
-# 8. f² scale-wise effect size
+# Print the first few rows of the result
+head(rhodpcca_result)
+```
 
-# 9. Shen-Podobnik Test
+# 5. Detrended Multiple-Correlation Coefficient
 
-# 10. Kristoufek Test
+The `dmc2` function calculates the Detrended Multiple-Correlation Coefficient.
 
-# 11. Intersection-Union Test
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
 
+# Calculate Detrended Multiple-Correlation Coefficient
+dmc2_result <- dmc2(data)
+
+# Print the first few rows of the result
+head(dmc2_result)
+```
+
+# 6. Detrended Multiple Linear Regression
+
+The `fracreg` function performs a Detrended Multiple Linear Regression.
+
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
+
+# Calculate Detrended Multiple Linear Regression
+fracreg_result <- fracreg(data, dpo = 1, int = TRUE)
+
+# The results are a list of various components. For example, the Beta DFA estimates:
+head(fracreg_result$BDFA)
+```
+
+# 7. Beta DFA estimates
+
+The `betadfa` function calculates the Beta DFA estimates.
+
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
+
+# Calculate Beta DFA estimates
+betadfa_result <- betadfa(data)
+
+# Print the first few rows of the result
+head(betadfa_result)
+```
+
+# 8. Standardized Beta DFA estimates
+
+The `sbdfa` function calculates the Standardized Beta DFA estimates.
+
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
+
+# Calculate Standardized Beta DFA estimates
+sbdfa_result <- sbdfa(data)
+
+# Print the first few rows of the result
+head(sbdfa_result)
+```
+
+# 9. f² scale-wise effect size
+
+The `effsizeDFA` function calculates the f² scale-wise effect size.
+
+```{r}
+# Generate a sample matrix of three time series
+data <- matrix(rnorm(3000), ncol = 3)
+
+# Calculate f² scale-wise effect size
+effsizeDFA_result <- effsizeDFA(data)
+
+# Print the first few rows of the result
+head(effsizeDFA_result)
+```
+
+# 10. Shen-Podobnik Test
+
+The `fracreg.PStest` function performs the Podobnik-Shen Test.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Perform the Podobnik-Shen Test
+PStest_result <- fracreg.PStest(data)
+
+# Print the first few rows of the result
+head(PStest_result)
+```
+
+# 11. Kristoufek Test
+
+The `fracreg.Ktest` function performs the Kristoufek Test.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Perform the Kristoufek Test
+Ktest_result <- fracreg.Ktest(data)
+
+# Print the first few rows of the result
+head(Ktest_result)
+```
+
+# 12. Intersection-Union Test
+
+The `fracreg.IUTest` function performs the Intersection-Union Test.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Perform the Intersection-Union Test
+IUTest_result <- fracreg.IUTest(data)
+
+# The result is a list containing the results of the PStest and Ktest
+names(IUTest_result)
+head(IUTest_result$PStest)
+head(IUTest_result$Ktest)
+```
+
+# 13. Plotting Functions
+
+## 13.1 plotdfa
+
+The `plotdfa` function plots the results of a DFA analysis.
+
+```{r}
+# Generate a sample time series
+data <- rnorm(1000)
+
+# Calculate DFA
+dfa_result <- dfa(data)
+
+# Plot the DFA result
+plotdfa(dfa_result, main = "DFA Plot")
+```
+
+## 13.2 plotdcca
+
+The `plotdcca` function plots the results of a DCCA analysis.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Calculate DCCA using the fracreg function
+dcca_result <- fracreg(data, dpo = 1, int = TRUE)
+
+# Plot the DCCA result
+plotdcca(dcca_result, main = "DCCA Plot")
+```
+
+## 13.3 plotrdcca
+
+The `plotrdcca` function plots the results of a rho-DCCA analysis.
+
+```{r}
+# Generate a sample matrix of two time series
+data <- matrix(rnorm(2000), ncol = 2)
+
+# Calculate rho-DCCA
+rdcca_result <- rhodcca(data)
+
+# Plot the rho-DCCA result
+plotrdcca(rdcca_result, var = 1, main = "rho-DCCA Plot")
+```
