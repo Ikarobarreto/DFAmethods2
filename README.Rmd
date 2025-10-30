@@ -32,25 +32,78 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-# 1. Detrended Fluctuation Analysis
+# Usage
 
-# 2. Detrended Cros-Correlation Analysis
+This section provides examples of how to use the main functions of the `DFAmethods2` package. We will use the `EuStockMarkets` dataset, which is included in R.
 
-# 3. Detrended Cros-Correlation Coefficient
+```{r data}
+# Load the dataset
+data(EuStockMarkets)
 
-# 4. Detrended Partial Cros-Correlation Coefficient
+# Convert to a data.frame
+df <- as.data.frame(EuStockMarkets)
 
-# 5. Detrended Multiple Linear Regression
+# Use the first 1000 observations for this example
+df_subset <- df[1:1000, ]
+```
 
-# 6. Beta DFA estimates
+## 1. Detrended Fluctuation Analysis (DFA)
 
-# 7. Standardized Beta DFA estimates
+The `dfa()` function calculates the Detrended Fluctuation Analysis for a single time series.
 
-# 8. f² scale-wise effect size
+```{r dfa_example}
+# Perform DFA on the DAX index
+dfa_result <- dfa(df_subset$DAX)
 
-# 9. Shen-Podobnik Test
+# Print the first few rows of the result
+head(dfa_result)
+```
 
-# 10. Kristoufek Test
+## 2. Detrended Cross-Correlation Analysis (DCCA)
 
-# 11. Intersection-Union Test
+The `rhodcca()` function calculates the Detrended Cross-Correlation Coefficient for two or more time series.
+
+```{r rhodcca_example}
+# Perform DCCA on the DAX and SMI indices
+rhodcca_result <- rhodcca(df_subset[, c("DAX", "SMI")])
+
+# Print the first few rows of the result
+head(rhodcca_result)
+```
+
+## 3. Detrended Partial Cross-Correlation Analysis (DPCCA)
+
+The `rhodpcca()` function calculates the Detrended Partial Cross-Correlation Coefficient for three or more time series.
+
+```{r rhodpcca_example}
+# Perform DPCCA on DAX, SMI, and CAC indices
+rhodpcca_result <- rhodpcca(df_subset[, c("DAX", "SMI", "CAC")])
+
+# Print the first few rows of the result
+head(rhodpcca_result)
+```
+
+## 4. Detrended Multiple-Correlation Coefficient (DMC²)
+
+The `dmc2()` function calculates the Detrended Multiple-Correlation Coefficient.
+
+```{r dmc2_example}
+# Calculate DMC² for DAX, SMI, and CAC
+dmc2_result <- dmc2(df_subset[, c("DAX", "SMI", "CAC")])
+
+# Print the first few rows of the result
+head(dmc2_result)
+```
+
+## 5. Multiple Fractal Regression
+
+The `fracreg()` function calculates the Multiple Fractal Regression.
+
+```{r fracreg_example}
+# Perform fractal regression
+fracreg_result <- fracreg(df_subset, dpo = 1, int = TRUE)
+
+# The result is a list of objects. For example, you can access the Beta DFA estimates
+head(fracreg_result$BDFA)
+```
 
