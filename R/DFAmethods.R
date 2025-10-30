@@ -9,6 +9,9 @@
 #' @return Scale s, Detrended Fluctuation Function F, Rho-DCCA, Rho DPCCA,
 #' Beta DFA estimates, Standardized Beta DFA estimates, DFA Residuals, DFA Variance, DFA Upper and Lower confidence interval,
 #' Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T statistics.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' fracreg(data, dpo = 1, int = TRUE)
 #' @export
 #' @importFrom stats pt
 #' @importFrom stats qt
@@ -143,6 +146,9 @@ return(fracreg)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Detrended Fluctuation Function F
+#' @examples
+#' data <- rnorm(1000)
+#' dfa(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -186,6 +192,9 @@ return(DFA)
 #' @return Scale s, Rho-DCCA
 #' @importFrom tibble as_tibble
 #' @importFrom gdata upperTriangle
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' rhodcca(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 #'
@@ -261,6 +270,9 @@ return(rhodcca)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Rho DPCCA
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 3)
+#' rhodpcca(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 #'
@@ -337,6 +349,9 @@ for(i in 1:(np-1)){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Multiple Detrended Correlation
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 3)
+#' dmc2(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -414,6 +429,9 @@ return(DMC2)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, f² scale-wise effect sizes
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 3)
+#' effsizeDFA(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @importFrom dplyr inner_join
 #' @export
@@ -456,6 +474,9 @@ else{
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Beta DFA estimates
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' bdfa(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 
 bdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
@@ -528,6 +549,9 @@ return(bdfa)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Beta DFA estimates
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' betadfa(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -601,6 +625,9 @@ betadfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Standardized Beta DFA estimates
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' sbdfa(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -683,6 +710,9 @@ sbdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' fracreg.Ktest(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -745,6 +775,9 @@ return(cib)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Podobnik-Shen Test.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' fracreg.PStest(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -789,6 +822,9 @@ return(cib)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test and Podobnik-Shen Test.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' fracreg.IUTest(data)
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
@@ -808,6 +844,10 @@ fracreg.IUTest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
 #' @param point indicate in which point segmented alpha DFA should be calculated
 #' @param main plot title
 #' @return a plot of Detrended Fluctuation Analysis.
+#' @examples
+#' data <- rnorm(1000)
+#' dfa_result <- dfa(data)
+#' plotdfa(dfa_result, main = "DFA Plot")
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 aes
 #' @importFrom ggplot2 geom_jitter
@@ -866,6 +906,10 @@ plotdfa <- function(dfa,seg=F,point=NULL,main) {
 #' @param point indicate in which point segmented alpha DFA should be calculated
 #' @param main plot title
 #' @return a plot of Detrended Cross Correlation Analysis.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' dcca_result <- fracreg(data, dpo = 1, int = TRUE)
+#' plotdcca(dcca_result, main = "DCCA Plot")
 #' @export
 
 plotdcca <- function(dcca,seg=F,point=NULL,main) {
@@ -915,6 +959,10 @@ plotdcca <- function(dcca,seg=F,point=NULL,main) {
 #' @param main plot title
 #' @param var numerical. Indicate which pair in rho dcca object you want to plot.
 #' @return a plot of Detrended Cross Correlation Analysis.
+#' @examples
+#' data <- matrix(rnorm(1000), ncol = 2)
+#' rdcca_result <- rhodcca(data)
+#' plotrdcca(rdcca_result, var = 1, main = "rho-DCCA Plot")
 #' @export
 
 plotrdcca <- function(rdcca,var,main) {
