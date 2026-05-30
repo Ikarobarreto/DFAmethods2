@@ -8,4 +8,7 @@
 
 * This is a new release.
 
-The note is the standard "New submission" message.
+The note is the standard "New submission" message. It also flags possibly
+misspelled words in DESCRIPTION (Barreto, Kristoufek, Podobnik, Shen, "et",
+"al"); these are author/researcher surnames and the standard "et al." citation
+abbreviation, and are spelled correctly.
