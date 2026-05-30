@@ -22,16 +22,13 @@ int ABSFLAG;	// calculate absolute values for dcca
 
 
 int iflag=1,minbox,maxbox,nfit=2,npts,nr,sw;
-long *rs;	/* box size array; allocated and filled by rscale() */
+int *rs;	/* box size array; passed in from R as an integer vector */
 double *seq;	/* input data buffer; allocated and filled by input() */
 double *mse;	/* fluctuation array; allocated by setup(), filled by dfa() */
 double *seq1;	// input data
 double *dif1;	// difference array
 double *seq2;	// input data
 double *dif2;	// difference array
-
-//dfa.c variables
-char *pname;	/* this program's name (for use in error messages) */
 
 //dcca.c variables
 double *mse1, *mse2, *msedcca;	/* fluctuation array; allocated by setup(), filled by dfa() */
@@ -40,7 +37,7 @@ int absflag;
 void setup_dcca(int);
 void cleanup_dcca(void);
 
-long *rs;
+int *rs;
 
 
 /* Function prototypes. */
@@ -48,8 +45,8 @@ void run_dfa(double *seq, int npts);
 void run_dcca(double *seq1, double *seq2, int npts);
 
 int rscale(long minbox, long maxbox, double boxratio);
-void dfa(double *seq, long npts, int nfit, long *rs, int nr, int sw);
-void dcca(double *seq1, double *seq2, long npts, int nfit, long *rs, int nr, int sw);
+void dfa(double *seq, long npts, int nfit, int *rs, int nr, int sw);
+void dcca(double *seq1, double *seq2, long npts, int nfit, int *rs, int nr, int sw);
 void setup(void);
 void cleanup(void);
 void setup_dcca(int);
@@ -96,7 +93,7 @@ double **x;	/* matrix of abscissas and their powers, for polyfit(). */
     sw:		mode (0: non-overlapping windows, 1: sliding window)
    This function returns the mean squared fluctuations in mse[].
 */
-void dfa(double *seq, long npts, int nfit, long *rs, int nr, int sw)
+void dfa(double *seq, long npts, int nfit, int *rs, int nr, int sw)
 {
     long i, boxsize, inc, j;
     double stat;
@@ -151,31 +148,6 @@ void cleanup()
     free_vector(beta, 1, nfit);
 //    free_lvector(rs, 1, rslen);	/* allocated by rscale() */
 //    free(seq);			/* allocated by input() */
-}
-
-static char *help_strings[] = {
- "usage: %s [OPTIONS ...]\n",
- "where OPTIONS may include:",
- " -d K             detrend using a polynomial of degree K",
- "                   (default: K=1 -- linear detrending)",
- " -h               print this usage summary",
- " -i               input series is already integrated",
- " -l MINBOX        smallest box width (default: 2K+2)",
- " -s               sliding window DFA",
- " -u MAXBOX        largest box width (default: NPTS/4)",
- "The standard input should contain one column of data in text format.",
- "The standard output is two columns: log(n) and log(F) [base 10 logarithms],",
- "where n is the box size and F is the root mean square fluctuation.",
-NULL
-};
-
-void help(void)
-{
-    int i;
-
-    (void)fprintf(stderr, help_strings[0], pname);
-    for (i = 1; help_strings[i] != NULL; i++)
-	(void)fprintf(stderr, "%s\n", help_strings[i]);
 }
 
 /* polyfit() is based on lfit() and gaussj() from Numerical Recipes in C
@@ -390,7 +362,7 @@ double **x2;	/* matrix of abscissas and their powers, for polyfit(). */
     sw:		mode (0: non-overlapping windows, 1: sliding window)
    This function returns the mean squared fluctuations in mse[].
 */
-void dcca(double *seq1, double *seq2, long npts, int nfit, long *rs, int nr, int sw)
+void dcca(double *seq1, double *seq2, long npts, int nfit, int *rs, int nr, int sw)
 {
     long i, boxsize, inc, j, k;
     double stat, temp;
@@ -471,7 +443,7 @@ void cleanup_dcca()
 rdfa.c
 *******************************************************************************************************************************************************/
 
-void rdfa(CONFIG *cfg, double *r_seq, long *r_rs,double *r_mse)
+void rdfa(CONFIG *cfg, double *r_seq, int *r_rs,double *r_mse)
 {
 double alpha, scale;
 int i;
@@ -518,7 +490,7 @@ free(seq);
 
 /************************************************************************************/
 
-void rdcca(CONFIG *cfg, double *r_seq1, double *r_seq2, long *r_rs,double *r_mse)
+void rdcca(CONFIG *cfg, double *r_seq1, double *r_seq2, int *r_rs,double *r_mse)
 {
 double alpha, scale;
 int i;

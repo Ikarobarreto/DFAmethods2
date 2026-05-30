@@ -1,7 +1,7 @@
 Package: DFAmethods2
 Type: Package
 Title: Detrended Fluctuation Analysis and Related Methods
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person(given = "Ikaro Daniel de Carvalho",
            family = "Barreto",
