@@ -1,6 +1,6 @@
 ## Test environments
 * local Windows 10 install, R 4.5.1
-* win-builder (devel and release)
+* win-builder (R-devel)
 
 ## R CMD check results
 
