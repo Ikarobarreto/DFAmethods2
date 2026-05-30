@@ -23,3 +23,15 @@ Scale s, Standardized Beta DFA estimates
 \description{
 Calculates Standardized Beta DFA
 }
+\references{
+Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+Extending DFA-based multiple linear regression inference: application to
+acoustic impedance models. \emph{Physica A}, 582, 126259.
+
+Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+framework: estimating dependence at different scales. \emph{Physical Review
+E}, 91(2), 022802.
+}
+\seealso{
+\code{\link{betadfa}}, \code{vignette("DFAmethods2")}
+}

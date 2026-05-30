@@ -4,14 +4,12 @@
 \alias{plotrdcca}
 \title{Plot rho-DCCA}
 \usage{
-plotrdcca(rdcca, var, main)
+plotrdcca(rdcca, var)
 }
 \arguments{
 \item{rdcca}{is a rhodcca object}
 
-\item{var}{numerical. Indicate which pair in rho dcca object you want to plot.}
-
-\item{main}{plot title}
+\item{var}{character. Indicate which pair in rho dcca object you want to plot.}
 }
 \value{
 a plot of Detrended Cross Correlation Analysis.

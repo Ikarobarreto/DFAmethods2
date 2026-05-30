@@ -25,3 +25,12 @@ A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test and Podob
 \description{
 Calculates Intersection-Union Test for Beta-DFA = 0 or Beta-DFA = Beta-OLS
 }
+\references{
+Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+Extending DFA-based multiple linear regression inference: application to
+acoustic impedance models. \emph{Physica A}, 582, 126259.
+}
+\seealso{
+\code{\link{fracreg.PStest}}, \code{\link{fracreg.Ktest}},
+\code{vignette("DFAmethods2")}
+}

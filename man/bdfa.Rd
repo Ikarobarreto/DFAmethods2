@@ -23,3 +23,4 @@ Scale s, Beta DFA estimates
 \description{
 Calculates Beta DFA
 }
+\keyword{internal}

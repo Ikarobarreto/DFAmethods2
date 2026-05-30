@@ -1,56 +1,64 @@
 ---
-title: "DFAmethods2"
-author: "Ikaro Daniel de Carvalho Barreto, Luiz Henrique Dore e Antonio Samuel Alves da Silva"
-date: "03/09/2021"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{DFAmethods2}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output: github_document
 ---
-**DFAMethods2** is a package for Detrended Fluctuation like-Analysis. In this package we developed methods such as:
 
-**Detrended Fluctuation Analysis**  
-**Detrended Cros-Correlation Analysis**  
-**Detrended Cros-Correlation Coefficient**  
-**Detrended Partial Cros-Correlation Coefficient**  
-**Detrended Multiple Linear Regression**  
-**Beta DFA estimates**  
-**Standardized Beta DFA estimates**  
-**f² scale-wise effect size**  
-**Shen-Podobnik Test**  
-**Kristoufek Test**  
-**Intersection-Union Test**  
-
-```{r setup}
-library(DFAmethods2)
-```
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
 )
 ```
-# 1. Detrended Fluctuation Analysis
 
-# 2. Detrended Cros-Correlation Analysis
+# DFAmethods2
 
-# 3. Detrended Cros-Correlation Coefficient
+<!-- badges: start -->
+<!-- badges: end -->
 
-# 4. Detrended Partial Cros-Correlation Coefficient
+**DFAmethods2** is a toolbox of Detrended Fluctuation Analysis (DFA) methods for
+measuring long-range correlations, cross-correlations and regression in
+**nonstationary** time series, where classical autocorrelation and ordinary
+regression are biased by trends. It provides:
 
-# 5. Detrended Multiple Linear Regression
+- **Detrended Fluctuation Analysis** — `dfa()`
+- **Detrended Cross-Correlation Analysis** and the **rho-DCCA** coefficient — `rhodcca()`
+- **Detrended Partial Cross-Correlation** coefficient — `rhodpcca()`
+- **Detrended Multiple Cross-Correlation** coefficient (DMC) — `dmc2()`
+- **Detrended fractal regression**: scale-wise and standardized coefficients — `betadfa()`, `sbdfa()`, `fracreg()`
+- **Scale-wise** $f^2$ **effect sizes** — `effsizeDFA()`
+- **Significance tests**: Podobnik-Shen, Kristoufek and intersection-union — `fracreg.PStest()`, `fracreg.Ktest()`, `fracreg.IUTest()`
 
-# 6. Beta DFA estimates
+The scale-dependent standardized coefficients, the scale-wise effect size and
+the intersection-union test follow Barreto et al. (2021)
+[doi:10.1016/j.physa.2021.126259](https://doi.org/10.1016/j.physa.2021.126259).
 
-# 7. Standardized Beta DFA estimates
+## Installation
 
-# 8. f² scale-wise effect size
+``` r
+# install.packages("devtools")
+devtools::install_github("Ikarobarreto/DFAmethods2")
+```
 
-# 9. Shen-Podobnik Test
+## Example
 
-# 10. Kristoufek Test
+A response `y` driven by a covariate `x2`, both random-walk-like:
 
-# 11. Intersection-Union Test
+```{r example}
+library(DFAmethods2)
 
+set.seed(1)
+x2  <- cumsum(rnorm(800))
+y   <- 0.7 * x2 + cumsum(rnorm(800))
+dat <- data.frame(y = y, x2 = x2)
+
+# DFA fluctuation function of y
+head(dfa(y, np = 30))
+
+# scale-wise rho-DCCA cross-correlation coefficient
+head(rhodcca(dat, np = 30))
+```
+
+See `vignette("DFAmethods2")` for the full theory and worked examples.

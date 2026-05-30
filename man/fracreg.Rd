@@ -25,3 +25,19 @@ Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T stati
 \description{
 Calculates Fractal Regression.
 }
+\references{
+Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+Extending DFA-based multiple linear regression inference: application to
+acoustic impedance models. \emph{Physica A}, 582, 126259.
+
+Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
+\emph{Physics Letters A}, 379(44), 2962-2969.
+
+Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+framework: estimating dependence at different scales. \emph{Physical Review
+E}, 91(2), 022802.
+}
+\seealso{
+\code{\link{betadfa}}, \code{\link{effsizeDFA}},
+\code{vignette("DFAmethods2")}
+}

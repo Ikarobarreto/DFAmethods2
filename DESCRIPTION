@@ -1,21 +1,29 @@
 Package: DFAmethods2
 Type: Package
-Title: General DFA methods
+Title: Detrended Fluctuation Analysis and Related Methods
 Version: 0.1.0
-Author: Ikaro Barreto <daniel.carvalho.ib@gmail.com>
-Maintainer: Ikaro Barreto <daniel.carvalho.ib@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-Imports: 
+Authors@R: c(
+    person(given = "Ikaro Daniel de Carvalho",
+           family = "Barreto",
+           role = c("aut", "cre"),
+           email = "daniel.carvalho.ib@gmail.com"),
+    person(given = "Luiz Henrique",
+           family = "Dore",
+           role = "aut"))
+Description: A collection of Detrended Fluctuation Analysis ('DFA') methods
+    for studying long-range correlations in time series. It provides
+    detrended fluctuation analysis, detrended cross-correlation analysis,
+    detrended cross-correlation and partial cross-correlation coefficients,
+    detrended multiple linear regression, scale-wise effect sizes, and the
+    associated significance tests (Shen-Podobnik, Kristoufek and
+    intersection-union). The scale-dependent standardized coefficients, the
+    scale-wise effect size and the intersection-union test follow Barreto et
+    al. (2021) <doi:10.1016/j.physa.2021.126259>.
+Imports:
     combinat,
-    Matrix,
     corpcor,
-    zoo,
-    reshape,
     tseries,
-    arfima,
     stats,
-    Rcpp,
     ggplot2,
     tibble,
     gdata,
@@ -23,11 +31,12 @@ Imports:
     magrittr
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.3
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 URL: https://github.com/Ikarobarreto/DFAmethods2
 BugReports: https://github.com/Ikarobarreto/DFAmethods2/issues
+Config/testthat/edition: 3

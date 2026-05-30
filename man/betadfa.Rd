@@ -23,3 +23,12 @@ Scale s, Beta DFA estimates
 \description{
 Calculates Beta DFA
 }
+\references{
+Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+framework: estimating dependence at different scales. \emph{Physical Review
+E}, 91(2), 022802.
+}
+\seealso{
+\code{\link{sbdfa}}, \code{\link{fracreg}},
+\code{vignette("DFAmethods2")}
+}

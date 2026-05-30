@@ -23,3 +23,14 @@ Scale s, Multiple Detrended Correlation
 \description{
 Calculates DMC²
 }
+\references{
+Zebende, G. F. and da Silva Filho, A. M. (2018). Detrended multiple
+cross-correlation coefficient. \emph{Physica A}, 510, 91-97.
+
+Wang, F., Xu, J. and Fan, Q. (2021). Statistical test for detrended multiple
+cross-correlation coefficient. \emph{Communications in Nonlinear Science and
+Numerical Simulation}, 99, 105781.
+}
+\seealso{
+\code{vignette("DFAmethods2")}
+}

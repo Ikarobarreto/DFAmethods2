@@ -25,3 +25,12 @@ A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test.
 \description{
 Calculates Kristoufek Test for Beta-DFA = Beta-OLS
 }
+\references{
+Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+framework: estimating dependence at different scales. \emph{Physical Review
+E}, 91(2), 022802.
+}
+\seealso{
+\code{\link{fracreg.PStest}}, \code{\link{fracreg.IUTest}},
+\code{vignette("DFAmethods2")}
+}

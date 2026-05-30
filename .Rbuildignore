@@ -3,6 +3,11 @@
 ^doc$
 ^Meta$
 ^README\.Rmd$
+^README\.html$
+^cran-comments\.md$
+^.*\.Rhistory$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+
+^.*desktop\.ini$

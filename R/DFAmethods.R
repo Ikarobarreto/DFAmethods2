@@ -1,3 +1,98 @@
+#' DFAmethods2: detrended fluctuation analysis and related methods
+#'
+#' A toolbox of Detrended Fluctuation Analysis ('DFA') methods for long-range
+#' correlations, cross-correlations and regression in nonstationary time series.
+#' See \code{vignette("DFAmethods2")} for the theory and worked examples.
+#'
+#' @section Function groups:
+#' \describe{
+#'   \item{Scaling of a single series}{\code{\link{dfa}}, \code{\link{plotdfa}}}
+#'   \item{Cross-correlation}{\code{\link{rhodcca}}, \code{\link{plotrdcca}},
+#'     \code{\link{plotdcca}}}
+#'   \item{Partial cross-correlation}{\code{\link{rhodpcca}}}
+#'   \item{Multiple cross-correlation}{\code{\link{dmc2}}}
+#'   \item{Detrended fractal regression}{\code{\link{betadfa}},
+#'     \code{\link{sbdfa}}, \code{\link{fracreg}}, \code{\link{effsizeDFA}}}
+#'   \item{Significance tests}{\code{\link{fracreg.PStest}},
+#'     \code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}}}
+#' }
+#'
+#' @keywords internal
+"_PACKAGE"
+
+# Column names referenced via non-standard evaluation in plotrdcca().
+utils::globalVariables(c("s", "rho"))
+
+# ---------------------------------------------------------------------------
+# Internal input-validation helpers. They stop() with a clear message on the
+# common user mistakes (wrong type, NA, too few columns, series too short,
+# invalid np/dpo/int/overlap/B) before any numerical work is attempted.
+# ---------------------------------------------------------------------------
+
+# Validate the shared arguments np, dpo, int and overlap.
+.check_common <- function(np, dpo, int, overlap, fn) {
+  if (!is.numeric(np) || length(np) != 1L || is.na(np) || np < 2 || np != round(np))
+    stop(sprintf("%s(): `np` must be a single integer >= 2.", fn), call. = FALSE)
+  if (!is.numeric(dpo) || length(dpo) != 1L || is.na(dpo) || dpo < 1 || dpo != round(dpo))
+    stop(sprintf("%s(): `dpo` must be a single integer >= 1.", fn), call. = FALSE)
+  if (!is.logical(int) || length(int) != 1L || is.na(int))
+    stop(sprintf("%s(): `int` must be a single TRUE or FALSE.", fn), call. = FALSE)
+  if (!is.logical(overlap) || length(overlap) != 1L || is.na(overlap))
+    stop(sprintf("%s(): `overlap` must be a single TRUE or FALSE.", fn), call. = FALSE)
+  invisible(TRUE)
+}
+
+# The box sizes run from a minimum of 10 up to round(n / 5); the series must be
+# long enough for that maximum to exceed the minimum.
+.check_length <- function(nobs, fn) {
+  if (round(nobs / 5) <= 10)
+    stop(sprintf(paste0("%s(): series too short (%d observations). At least ~55 ",
+                        "are needed so the largest box size exceeds the smallest (10)."),
+                 fn, nobs), call. = FALSE)
+  invisible(TRUE)
+}
+
+# Validate a single numeric series (for dfa()).
+.check_series <- function(x, fn) {
+  if (!is.numeric(x) || !is.null(dim(x)))
+    stop(sprintf("%s(): `data` must be a numeric vector.", fn), call. = FALSE)
+  if (anyNA(x))
+    stop(sprintf("%s(): `data` contains missing values (NA); remove them first.", fn),
+         call. = FALSE)
+  .check_length(length(x), fn)
+  invisible(TRUE)
+}
+
+# Validate a numeric matrix/data frame with at least `min_cols` columns.
+.check_matrix <- function(data, min_cols, fn) {
+  if (is.null(dim(data)) || length(dim(data)) != 2L)
+    stop(sprintf("%s(): `data` must be a matrix or data frame with at least %d columns.",
+                 fn, min_cols), call. = FALSE)
+  if (is.data.frame(data)) {
+    ok <- vapply(data, is.numeric, logical(1))
+    if (!all(ok))
+      stop(sprintf("%s(): all columns of `data` must be numeric; non-numeric: %s.",
+                   fn, paste(names(data)[!ok], collapse = ", ")), call. = FALSE)
+  } else if (!is.numeric(data)) {
+    stop(sprintf("%s(): `data` must be numeric.", fn), call. = FALSE)
+  }
+  if (ncol(data) < min_cols)
+    stop(sprintf("%s(): `data` needs at least %d columns; got %d.",
+                 fn, min_cols, ncol(data)), call. = FALSE)
+  if (anyNA(data))
+    stop(sprintf("%s(): `data` contains missing values (NA); remove or impute them first.", fn),
+         call. = FALSE)
+  .check_length(nrow(data), fn)
+  invisible(TRUE)
+}
+
+# Validate the surrogate count B used by the hypothesis tests.
+.check_B <- function(B, fn) {
+  if (!is.numeric(B) || length(B) != 1L || is.na(B) || B < 1 || B != round(B))
+    stop(sprintf("%s(): `B` must be a single integer >= 1.", fn), call. = FALSE)
+  invisible(TRUE)
+}
+
 #' Multiple Fractal Regression
 #'
 #' Calculates Fractal Regression.
@@ -9,6 +104,19 @@
 #' @return Scale s, Detrended Fluctuation Function F, Rho-DCCA, Rho DPCCA,
 #' Beta DFA estimates, Standardized Beta DFA estimates, DFA Residuals, DFA Variance, DFA Upper and Lower confidence interval,
 #' Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T statistics.
+#' @references
+#' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+#' Extending DFA-based multiple linear regression inference: application to
+#' acoustic impedance models. \emph{Physica A}, 582, 126259.
+#'
+#' Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
+#' \emph{Physics Letters A}, 379(44), 2962-2969.
+#'
+#' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+#' framework: estimating dependence at different scales. \emph{Physical Review
+#' E}, 91(2), 022802.
+#' @seealso \code{\link{betadfa}}, \code{\link{effsizeDFA}},
+#' \code{vignette("DFAmethods2")}
 #' @export
 #' @importFrom stats pt
 #' @importFrom stats qt
@@ -23,6 +131,8 @@
 #' @useDynLib DFAmethods2, .registration=TRUE
 
 fracreg<-function(data,dpo,int,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "fracreg")
+	.check_matrix(data, 2, "fracreg")
 	data<-as.matrix(data)
 	dpo<-as.numeric(dpo+1)
 	if (int ==TRUE){int=1} else{int=0}
@@ -40,6 +150,7 @@ fracreg<-function(data,dpo,int,np=91,overlap=T){
 	dmc2<-matrix(NA,nrow=np) #DMC2 Zebende et al (2018)
 	bs<-array(,dim=c(1,(nc-1),np)) #Beta Padronizado
 	vn<-array(,dim=c(1,(nc-1),np)) #Variância dos Parâmetros Bdfa(s)
+	vn2<-array(,dim=c(1,(nc-1),np)) #Variância dos Parâmetros Bdfa(s)
 	tn<-array(,dim=c((nc-1),1,np)) #p-valor para os Bdfas
 	tnc<-array(,dim=c((nc-1),1,np)) #T crítico
 	size=nrow(data)
@@ -118,7 +229,7 @@ u1<-NULL
 for(k in 1:np){
 	for(i in (2:nc)){
 	  vn[,(i-1),k]<-((fn[1,1,k]-dmc2[k]*fn[1,1,k])/(fn[i,i,k]))*(1/(sn[[k]]-nc-2))
-	  #vn[,(i-1),k]<-(un[1,1,k]/fn[i,i,k])*(1/(size))
+	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
 		}}
 for(k in 1:np){
 	for(i in 1:(nc-1)){
@@ -128,8 +239,8 @@ for(k in 1:np){
 	tnc[i,1,k]<-as.matrix(qt(0.975,df=((size/sn[[k]])-nc))*sqrt(vn[1,i,k]))
 	}}
 
-fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,dmc2,rn,uci,lci,tn,tnc)
-names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","DMC2","R2DFA","UCIB","LCIB","p.value","TC")
+fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc)
+names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC")
 
 return(fracreg)
 }
@@ -143,10 +254,16 @@ return(fracreg)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Detrended Fluctuation Function F
+#' @references
+#' Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
+#' \emph{Physical Review E}, 49(2), 1685-1689.
+#' @seealso \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 dfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "dfa")
+	.check_series(data, "dfa")
 	data<-as.matrix(data)
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
@@ -184,14 +301,23 @@ return(DFA)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Rho-DCCA
+#' @references
+#' Podobnik, B. and Stanley, H. E. (2008). Detrended cross-correlation analysis:
+#' a new method for analyzing two nonstationary time series.
+#' \emph{Physical Review Letters}, 100(8), 084102.
+#'
+#' Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
+#' of cross-correlation. \emph{Physica A}, 390(4), 614-618.
+#' @seealso \code{vignette("DFAmethods2")}
 #' @importFrom tibble as_tibble
 #' @importFrom gdata upperTriangle
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 #'
 rhodcca<-function(data,dpo=1,int=T,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "rhodcca")
+	.check_matrix(data, 2, "rhodcca")
 	data<-as.matrix(data)
-	if(ncol(data)<2){warning("A matrix with at least two columns are necessary")}
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
 	nc<-ncol(data)
@@ -261,12 +387,18 @@ return(rhodcca)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Rho DPCCA
+#' @references
+#' Yuan, N. et al. (2015). Detrended partial-cross-correlation analysis: a new
+#' method for analyzing correlations in complex system. \emph{Scientific
+#' Reports}, 5, 8143.
+#' @seealso \code{\link{rhodcca}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 #'
 rhodpcca<-function(data,dpo=1,int=T,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "rhodpcca")
+	.check_matrix(data, 3, "rhodpcca")
 	data<-as.matrix(data)
-	if(ncol(data)<3){warning("A matrix with at least three columns are necessary")}
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
 	nc<-ncol(data)
@@ -337,12 +469,21 @@ for(i in 1:(np-1)){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Multiple Detrended Correlation
+#' @references
+#' Zebende, G. F. and da Silva Filho, A. M. (2018). Detrended multiple
+#' cross-correlation coefficient. \emph{Physica A}, 510, 91-97.
+#'
+#' Wang, F., Xu, J. and Fan, Q. (2021). Statistical test for detrended multiple
+#' cross-correlation coefficient. \emph{Communications in Nonlinear Science and
+#' Numerical Simulation}, 99, 105781.
+#' @seealso \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 dmc2<-function(data,dpo=1,int=T,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "dmc2")
+	.check_matrix(data, 2, "dmc2")
 	data<-as.matrix(data)
-	if(ncol(data)<3){warning("A matrix with at least three columns are necessary")}
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
 	nc<-ncol(data)
@@ -414,11 +555,21 @@ return(DMC2)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, f² scale-wise effect sizes
+#' @references
+#' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+#' Extending DFA-based multiple linear regression inference: application to
+#' acoustic impedance models. \emph{Physica A}, 582, 126259.
+#'
+#' Cohen, J. (1988). \emph{Statistical Power Analysis for the Behavioral
+#' Sciences}, 2nd ed. Lawrence Erlbaum Associates.
+#' @seealso \code{\link{fracreg}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @importFrom dplyr inner_join
 #' @export
 
 effsizeDFA<-function(data,dpo=1,int=T,np=91,overlap=T){
+  .check_common(np, dpo, int, overlap, "effsizeDFA")
+  .check_matrix(data, 3, "effsizeDFA")
   if(ncol(data)<3){warning("the number of regressors are lower than 2\nplease provide at least 2 independent variables")}
 else{
 	nC<-ncol(data)
@@ -456,6 +607,7 @@ else{
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Beta DFA estimates
+#' @keywords internal
 #' @useDynLib DFAmethods2, .registration=TRUE
 
 bdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
@@ -528,10 +680,18 @@ return(bdfa)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Beta DFA estimates
+#' @references
+#' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+#' framework: estimating dependence at different scales. \emph{Physical Review
+#' E}, 91(2), 022802.
+#' @seealso \code{\link{sbdfa}}, \code{\link{fracreg}},
+#' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 betadfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+  .check_common(np, dpo, int, overlap, "betadfa")
+  .check_matrix(data, 2, "betadfa")
   nc<-ncol(data)
   cn<-c("s",names(data)[2:nc])
   data<-as.matrix(data)
@@ -601,10 +761,21 @@ betadfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Standardized Beta DFA estimates
+#' @references
+#' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+#' Extending DFA-based multiple linear regression inference: application to
+#' acoustic impedance models. \emph{Physica A}, 582, 126259.
+#'
+#' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+#' framework: estimating dependence at different scales. \emph{Physical Review
+#' E}, 91(2), 022802.
+#' @seealso \code{\link{betadfa}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 sbdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+  .check_common(np, dpo, int, overlap, "sbdfa")
+  .check_matrix(data, 2, "sbdfa")
   nc<-ncol(data)
   cn<-c("s",names(data)[2:nc])
   data<-as.matrix(data)
@@ -683,10 +854,19 @@ sbdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test.
+#' @references
+#' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
+#' framework: estimating dependence at different scales. \emph{Physical Review
+#' E}, 91(2), 022802.
+#' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.IUTest}},
+#' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 fracreg.Ktest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+.check_common(np, dpo, int, overlap, "fracreg.Ktest")
+.check_matrix(data, 2, "fracreg.Ktest")
+.check_B(B, "fracreg.Ktest")
 x<-ncol(data)-1
 if (int ==TRUE){int=1} else{int=0}
 yx<-ncol(data)
@@ -722,7 +902,7 @@ for(i in 1:x){
 	lcimat[,i]<-lcib[i,,]
 	ucimat[,i]<-ucib[i,,]
 }
-if(x==1){beta<-as.matrix(dpo(data,dpo=dpo)$BDFA[,1,])
+if(x==1){beta<-as.matrix(bdfa(data,dpo=dpo,int=int,np=np,overlap=overlap)$BDFA[,1,])
 	colnames(beta)<-paste("bet",1:x,sep="")
 	}else{
 	beta<-t(bdfa(data,dpo=dpo,int=int,np=np)$BDFA[,1,])
@@ -745,10 +925,22 @@ return(cib)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Podobnik-Shen Test.
+#' @references
+#' Podobnik, B., Jiang, Z.-Q., Zhou, W.-X. and Stanley, H. E. (2011).
+#' Statistical tests for power-law cross-correlated processes. \emph{Physical
+#' Review E}, 84(6), 066118.
+#'
+#' Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
+#' \emph{Physics Letters A}, 379(44), 2962-2969.
+#' @seealso \code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}},
+#' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 fracreg.PStest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+  .check_common(np, dpo, int, overlap, "fracreg.PStest")
+  .check_matrix(data, 2, "fracreg.PStest")
+  .check_B(B, "fracreg.PStest")
   a<-bdfa(data,dpo=dpo,int=int,np=np,overlap=overlap)
 	n<-nrow(data)
 	m<-ncol(data)-1
@@ -775,7 +967,7 @@ if(m==1){beta<-as.matrix(bdfa(data,dpo=dpo,int=int,np=np,overlap=overlap)$BDFA[,
 colnames(q025)<-paste("slci",1:m,sep="")
 colnames(q975)<-paste("suci",1:m,sep="")
 s<-bdfa(data,dpo=dpo,int=int,np=np,overlap=overlap)$s
-cib<-tibble::as.tibble(cbind.data.frame(beta,q025,q975,s))
+cib<-tibble::as_tibble(cbind.data.frame(beta,q025,q975,s))
 return(cib)
 }
 
@@ -789,10 +981,19 @@ return(cib)
 #' @param np number of point scales.
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test and Podobnik-Shen Test.
+#' @references
+#' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
+#' Extending DFA-based multiple linear regression inference: application to
+#' acoustic impedance models. \emph{Physica A}, 582, 126259.
+#' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.Ktest}},
+#' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @export
 
 fracreg.IUTest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+	.check_common(np, dpo, int, overlap, "fracreg.IUTest")
+	.check_matrix(data, 2, "fracreg.IUTest")
+	.check_B(B, "fracreg.IUTest")
 	t1<-fracreg.PStest(data,B=B,dpo=dpo,int=int,np=np,overlap=overlap)
 	t2<-fracreg.Ktest(data,B=B,dpo=dpo,int=int,np=np,overlap=overlap)
 	IUTest<-list(t1,t2)
@@ -836,8 +1037,8 @@ plotdfa <- function(dfa,seg=F,point=NULL,main) {
       ggplot2::ylab(expression(log[10](F[X]~(s))))+
       ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
       ggplot2::theme_bw()+
-      ggplot2::annotate("text",label=substitute(paste(alpha[1],"=",a),list(a=alfa1)),x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
-      ggplot2::annotate("text",label=substitute(paste(alpha[2],"=",b),list(b=alfa2)),x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
+      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
+      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
       ggplot2::geom_smooth(method = "lm",se=F)+ggplot2::theme(legend.position = "none")+
       ggplot2::ggtitle(main)
     p1
@@ -851,7 +1052,7 @@ plotdfa <- function(dfa,seg=F,point=NULL,main) {
       ggplot2::xlab(expression(log[10](s)))+
       ggplot2::ylab(expression(log[10](F[X]~(s))))+
       ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
-      ggplot2::theme_bw()+ggplot2::annotate("text",label=substitute(paste(alpha,"=",a),list(a=alfa)),x = quantile(s,0.25),y=median(F))+
+      ggplot2::theme_bw()+ggplot2::annotate("text",label=deparse(substitute(paste(alpha,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(F))+
       ggplot2::geom_smooth(method = "lm",se=F,show.legend = F)+
       ggplot2::ggtitle(main)
     p1
@@ -885,8 +1086,8 @@ plotdcca <- function(dcca,seg=F,point=NULL,main) {
         ggplot2::ylab(expression(log[10](F[XY]~(s))))+
         ggplot2::theme_bw()+
         ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
-        ggplot2::annotate("text",label=substitute(paste(lambda[1],"=",a),list(a=alfa1)),x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
-        ggplot2::annotate("text",label=substitute(paste(lambda[2],"=",b),list(b=alfa2)),x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
         ggplot2::geom_smooth(method = "lm",se=F)+ggplot2::theme(legend.position = "none")+
         ggplot2::ggtitle(main)
       p1
@@ -901,7 +1102,7 @@ plotdcca <- function(dcca,seg=F,point=NULL,main) {
         ggplot2::ylab(expression(log[10](F[XY]~(s))))+
         ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
         ggplot2::theme_bw()+
-        ggplot2::annotate("text",label=substitute(paste(lambda,"=",a),list(a=alfa)),x = quantile(s,0.25),y=median(F))+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(F))+
         ggplot2::geom_smooth(method = "lm",se=F,show.legend = F)+
         ggplot2::ggtitle(main)
       p1
@@ -912,21 +1113,30 @@ plotdcca <- function(dcca,seg=F,point=NULL,main) {
 #'
 #' Plot of Detrended Cross Correlation Coefficient
 #' @param rdcca is a rhodcca object
-#' @param main plot title
-#' @param var numerical. Indicate which pair in rho dcca object you want to plot.
+#' @param var character. Indicate which pair in rho dcca object you want to plot.
 #' @return a plot of Detrended Cross Correlation Analysis.
+#' @importFrom dplyr select filter mutate rename row_number n ends_with
 #' @export
 
-plotrdcca <- function(rdcca,var,main) {
-  lim<-length(rdcca[[1]])-1
-  s<-log10(rdcca[[1]][1:lim])
-  rho<-rdcca[[var+1]][1:lim]
-  df<-cbind.data.frame(s,rho)
-  p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=rho))+
-    ggplot2::geom_point()+ggplot2::xlab(expression(log[10](s)))+
-    ggplot2::ylab(expression(rho~DCCA))+
-    ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
-    ggplot2::theme_bw()+ggplot2::ggtitle(label=main,subtitle = names(rdcca)[[var+1]])
-  p1
+plotrdcca <- function(rdcca,var) {
+  if(nchar(var)!=2){print("Var must have length 2")}
+  else{
+
+    df<-rdcca %>%
+      select(s,ends_with(var)) %>%
+      filter(row_number() <= n()-1) %>%
+      rename(rho=ends_with(var)) %>%
+      mutate(s=log10(s))
+
+    p1 <- ggplot2::ggplot(df, ggplot2::aes(x = s, y = rho)) +
+      ggplot2::geom_point() +
+      ggplot2::xlab(expression(log[10](s))) +
+      ggplot2::ylab(expression(rho ~ DCCA)) +
+      ggplot2::scale_x_continuous(breaks = seq(min(df$s),max(df$s), by = 0.25)) +
+      ggplot2::theme_bw()
+    p1
+
+  }
+
 }
 

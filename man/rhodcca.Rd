@@ -23,3 +23,14 @@ Scale s, Rho-DCCA
 \description{
 Calculates rho DCCA
 }
+\references{
+Podobnik, B. and Stanley, H. E. (2008). Detrended cross-correlation analysis:
+a new method for analyzing two nonstationary time series.
+\emph{Physical Review Letters}, 100(8), 084102.
+
+Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
+of cross-correlation. \emph{Physica A}, 390(4), 614-618.
+}
+\seealso{
+\code{vignette("DFAmethods2")}
+}

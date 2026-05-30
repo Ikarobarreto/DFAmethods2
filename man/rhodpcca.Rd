@@ -23,3 +23,11 @@ Scale s, Rho DPCCA
 \description{
 Calculates DPCCA
 }
+\references{
+Yuan, N. et al. (2015). Detrended partial-cross-correlation analysis: a new
+method for analyzing correlations in complex system. \emph{Scientific
+Reports}, 5, 8143.
+}
+\seealso{
+\code{\link{rhodcca}}, \code{vignette("DFAmethods2")}
+}

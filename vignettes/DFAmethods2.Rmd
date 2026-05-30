@@ -1,56 +1,259 @@
 ---
-title: "DFAmethods2"
-author: "Ikaro Daniel de Carvalho Barreto, Luiz Henrique Dore e Antonio Samuel Alves da Silva"
-date: "03/09/2021"
+title: "Detrended fluctuation analysis and related methods"
+author: "Ikaro Daniel de Carvalho Barreto, Luiz Henrique Dore"
 output: rmarkdown::html_vignette
+bibliography: references.bib
 vignette: >
-  %\VignetteIndexEntry{DFAmethods2}
+  %\VignetteIndexEntry{Detrended fluctuation analysis and related methods}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-**DFAMethods2** is a package for Detrended Fluctuation like-Analysis. In this package we developed methods such as:
 
-**Detrended Fluctuation Analysis**  
-**Detrended Cros-Correlation Analysis**  
-**Detrended Cros-Correlation Coefficient**  
-**Detrended Partial Cros-Correlation Coefficient**  
-**Detrended Multiple Linear Regression**  
-**Beta DFA estimates**  
-**Standardized Beta DFA estimates**  
-**f² scale-wise effect size**  
-**Shen-Podobnik Test**  
-**Kristoufek Test**  
-**Intersection-Union Test**  
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 6,
+  fig.height = 4,
+  fig.align = "center"
+)
+set.seed(42)
+```
+
+## Overview
+
+Detrended Fluctuation Analysis (DFA) and its relatives are a family of methods
+for measuring long-range correlations and cross-correlations in **nonstationary**
+time series, where classical autocorrelation and ordinary regression are biased
+by trends. `DFAmethods2` collects the most useful members of this family under a
+common, consistent interface:
+
+| Concern | Function(s) |
+|---|---|
+| Scaling of a single series | `dfa()`, `plotdfa()` |
+| Cross-correlation of two series | `rhodcca()`, `plotrdcca()` |
+| Partial cross-correlation | `rhodpcca()` |
+| Multiple cross-correlation | `dmc2()` |
+| Regression at each scale | `betadfa()`, `sbdfa()`, `fracreg()` |
+| Scale-wise effect sizes | `effsizeDFA()` |
+| Significance tests | `fracreg.PStest()`, `fracreg.Ktest()`, `fracreg.IUTest()` |
+
+Several of the regression-oriented tools — the scale-dependent **standardized**
+coefficients, the scale-wise $f^2$ **effect size** and the **intersection-union
+test** — were introduced by @barreto2021, whose framework this package
+implements.
 
 ```{r setup}
 library(DFAmethods2)
 ```
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+### Data convention and common arguments
+
+Except for `dfa()` (which takes a single numeric vector), the functions expect a
+**matrix or data frame whose first column is the response** $Y$ and whose
+remaining columns are the covariates $X_2, \dots, X_p$. They share four
+arguments:
+
+* `dpo` — order of the polynomial used for detrending (1 = linear);
+* `int` — if `TRUE`, the series are integrated (cumulatively summed) first;
+* `np` — number of scales (box sizes) at which the statistics are evaluated;
+* `overlap` — if `TRUE`, sliding (overlapping) boxes are used.
+
+Throughout the vignette we use a simulated system in which a response `y`
+depends on two random-walk drivers, `x2` (positive) and `x3` (negative):
+
+```{r data}
+n  <- 1200
+x2 <- cumsum(rnorm(n))
+x3 <- cumsum(rnorm(n))
+y  <- 0.7 * x2 - 0.5 * x3 + cumsum(rnorm(n))
+dat <- data.frame(y = y, x2 = x2, x3 = x3)
 ```
-# 1. Detrended Fluctuation Analysis
 
-# 2. Detrended Cros-Correlation Analysis
+## Detrended fluctuation analysis
 
-# 3. Detrended Cros-Correlation Coefficient
+DFA [@peng1994] quantifies the scaling of fluctuations in a series. The series
+is first integrated into the profile $X(t) = \sum_{i=1}^{t} (x_i - \bar{x})$,
+which is split into boxes of size $s$; within each box a polynomial trend is
+removed and the variance of the residuals is taken. Averaging over boxes gives
+the **fluctuation function** $F(s)$, which for a self-similar series follows a
+power law
+$$
+F(s) \sim s^{\alpha},
+$$
+where the exponent $\alpha$ generalises the Hurst exponent: $\alpha = 0.5$ marks
+an uncorrelated series, $\alpha > 0.5$ persistence (long-range positive
+correlations) and $\alpha < 0.5$ anti-persistence.
 
-# 4. Detrended Partial Cros-Correlation Coefficient
+```{r dfa}
+fy <- dfa(dat$y, np = 40)
+head(fy)
 
-# 5. Detrended Multiple Linear Regression
+# the DFA exponent is the slope of log F(s) against log s
+alpha <- coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]]
+round(alpha, 3)
+```
 
-# 6. Beta DFA estimates
+`plotdfa()` draws the log–log fluctuation plot with the fitted exponent:
 
-# 7. Standardized Beta DFA estimates
+```{r dfa-plot, fig.alt = "DFA log-log fluctuation plot"}
+plotdfa(fy, main = "DFA of y")
+```
 
-# 8. f² scale-wise effect size
+## Cross-correlation: the rho-DCCA coefficient
 
-# 9. Shen-Podobnik Test
+Detrended Cross-Correlation Analysis (DCCA) [@podobnik2008] replaces the box
+variance by the **detrended covariance** $F_{XY}^2(s)$ between two integrated
+profiles. On its own $F_{XY}^2(s)$ is unbounded, so @zebende2011 normalised it
+into the **DCCA cross-correlation coefficient**
+$$
+\rho_{\mathrm{DCCA}}(s) = \frac{F_{XY}^2(s)}{F_X(s)\,F_Y(s)} \in [-1, 1],
+$$
+a scale-by-scale analogue of Pearson's correlation that is robust to trends.
+`rhodcca()` returns one column per pair of series:
 
-# 10. Kristoufek Test
+```{r rhodcca}
+rc <- rhodcca(dat, np = 40)
+head(rc)
+```
 
-# 11. Intersection-Union Test
+```{r rhodcca-plot, fig.alt = "rho-DCCA coefficient against scale"}
+plotrdcca(rc, var = "12")   # pair y (1) vs x2 (2)
+```
 
+The coefficient is strongly positive for the `y`–`x2` pair, as built into the
+simulation.
+
+## Partial cross-correlation: rho-DPCCA
+
+When several series interact, a direct $\rho_{\mathrm{DCCA}}$ may be inflated by
+shared drivers. Detrended Partial-Cross-Correlation Analysis [@yuan2015] removes
+the linear influence of the remaining series by inverting the
+$\rho_{\mathrm{DCCA}}$ matrix at each scale, giving the **partial** coefficient
+$\rho_{\mathrm{DPCCA}}(s)$:
+
+```{r rhodpcca}
+rp <- rhodpcca(dat, np = 40)
+head(rp)
+```
+
+## Multiple cross-correlation: DMC
+
+The Detrended Multiple Cross-Correlation Coefficient [@zebende2018] generalises
+the multiple-correlation coefficient ($R$) to scales. Writing
+$\boldsymbol{\rho}(s)$ for the matrix of $\rho_{\mathrm{DCCA}}(s)$ among the
+covariates and $\boldsymbol{\rho}_{Y\cdot}(s)$ for their coefficients with the
+response,
+$$
+\mathrm{DMC}(s) = \boldsymbol{\rho}_{Y\cdot}(s)^{\top}\,
+                  \boldsymbol{\rho}(s)^{-1}\,
+                  \boldsymbol{\rho}_{Y\cdot}(s) \in [0, 1],
+$$
+measuring how much of the response is jointly explained by the covariates at
+each scale (a recent statistical test is given by @wang2021):
+
+```{r dmc}
+dm <- dmc2(dat, np = 40)
+plot(dm[[1]], dm[[2]], type = "b", pch = 19, ylim = c(0, 1),
+     xlab = "scale s", ylab = "DMC(s)", main = "Detrended multiple correlation")
+```
+
+## Detrended fractal regression
+
+@kristoufek2015 turned the detrended (co)variances into a full **regression
+framework**. Collecting the detrended covariance matrix $\mathbf{F}(s)$, the
+scale-wise regression coefficients are
+$$
+\boldsymbol{\beta}(s) = \mathbf{F}_{XX}(s)^{-1}\,\mathbf{F}_{XY}(s),
+$$
+an unstandardised effect of each covariate on the response **at scale $s$** that,
+unlike OLS, can vary across scales. The multivariate case ($p \ge 2$ covariates,
+detrended multiple linear regression) is due to @shen2015. `betadfa()` returns
+these coefficients and `sbdfa()` their **standardised** counterparts (computed
+from the $\rho_{\mathrm{DCCA}}$ matrices), which @barreto2021 proposed as a
+scale-wise measure of relative importance:
+
+```{r betadfa}
+b  <- betadfa(dat, np = 40)
+head(b)
+
+matplot(b$s, b[, c("x2", "x3")], type = "l", lty = 1, lwd = 2,
+        xlab = "scale s", ylab = expression(beta(s)),
+        main = "Scale-wise regression coefficients")
+abline(h = c(0.7, -0.5), lty = 3, col = "grey50")
+legend("right", c("x2", "x3"), col = 1:2, lty = 1, lwd = 2, bty = "n")
+```
+
+The estimates hover around the true coefficients $0.7$ and $-0.5$ at every scale.
+
+`fracreg()` is the all-in-one workhorse: a single call returns the scale vector,
+detrended (partial) correlations, raw and standardised $\beta(s)$, the
+coefficient of determination, the DMC, confidence limits and $p$-values:
+
+```{r fracreg}
+fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)
+names(fr)
+```
+
+### Scale-wise effect sizes
+
+`effsizeDFA()` reports the scale-wise effect size introduced by @barreto2021 —
+Cohen's $f^2$ [@cohen1988] evaluated at each scale,
+$f^2 = (R^2_{\text{full}} - R^2_{\text{reduced}}) / (1 - R^2_{\text{full}})$ —
+turning the regression into a scale-resolved importance measure:
+
+```{r effsize}
+ef <- effsizeDFA(dat, np = 40)
+head(ef)
+```
+
+## Significance tests
+
+`DFAmethods2` ships surrogate-based tests for the scale-wise coefficients, built
+on phase-randomised surrogates of the series:
+
+* `fracreg.PStest()` — Podobnik–Shen test of $H_0\!: \beta(s) = 0$ (no
+  detrended effect) [@podobnik2011; @shen2015];
+* `fracreg.Ktest()` — Kristoufek test of $H_0\!: \beta_{\mathrm{DFA}}(s) =
+  \beta_{\mathrm{OLS}}$ (the scale effect equals the global OLS one)
+  [@kristoufek2015];
+* `fracreg.IUTest()` — the intersection–union test of @barreto2021 (following
+  the intersection–union principle, e.g. @vandeun2009), which combines the two
+  so as to reject only when a covariate has a direct, scale-dependent effect
+  that OLS would miss.
+
+Each returns the estimated $\beta(s)$ together with the lower/upper critical
+bounds of the test, so a coefficient is significant at a scale when it falls
+outside the band. We use a small number of surrogates here for speed; raise `B`
+in practice.
+
+```{r tests}
+ps <- fracreg.PStest(dat, B = 30, np = 30)
+head(ps)
+```
+
+```{r tests-plot, fig.alt = "Scale-wise beta with Podobnik-Shen critical band"}
+plot(ps$s, ps$bet1, type = "l", lwd = 2,
+     ylim = range(ps[, c("bet1", "slci1", "suci1")]),
+     xlab = "scale s", ylab = expression(beta[x2](s)),
+     main = "x2 coefficient vs Podobnik-Shen null band")
+lines(ps$s, ps$slci1, lty = 2, col = "red")
+lines(ps$s, ps$suci1, lty = 2, col = "red")
+```
+
+The `x2` coefficient lies well above the null band at all scales — a clear,
+scale-consistent effect.
+
+## Practical notes
+
+* Choose `np` and the implied range of box sizes with care: very small boxes are
+  noisy and very large boxes leave few windows. The defaults span box sizes from
+  10 to one fifth of the series length.
+* Use `int = TRUE` for noise-like (stationary) inputs and `int = FALSE` when the
+  series are already integrated (random-walk-like).
+* The surrogate tests are computationally heavy (they refit the model `B` times);
+  start small and increase `B` once the workflow is settled.
+
+## References

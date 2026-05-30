@@ -37,8 +37,8 @@ char *pname;	/* this program's name (for use in error messages) */
 double *mse1, *mse2, *msedcca;	/* fluctuation array; allocated by setup(), filled by dfa() */
 int absflag;
 
-void setup_dcca();
-void cleanup_dcca();
+void setup_dcca(int);
+void cleanup_dcca(void);
 
 long *rs;
 
@@ -120,7 +120,7 @@ int *indxc, *indxr, *ipiv;
 void setup()
 {
     long i;
-    int j, k;
+    int j;
 
     beta = vector(1, nfit);
     covar = matrix(1, nfit, 1, nfit);
@@ -186,7 +186,7 @@ void help(void)
 */
 double polyfit(double **x, double *y, double *res, long boxsize, int nfit)
 {
-    int icol, irow, j, k;
+    int icol = 0, irow = 0, j, k;
     double big, chisq, pivinv, temp;
     long i;
     static long pboxsize = 0L;
@@ -283,8 +283,8 @@ double *vector(long nl, long nh)
 /* allocate a double vector with subscript range v[nl..nh] */
 {
     double *v = (double *)malloc((size_t)((nh-nl+2) * sizeof(double)));
-    if (v == NULL) 				
-		return -1;
+    if (v == NULL)
+		return NULL;
     return (v-nl+1);
 }
 
@@ -293,7 +293,7 @@ int *ivector(long nl, long nh)
 {
     int *v = (int *)malloc((size_t)((nh-nl+2) * sizeof(int)));
     if (v == NULL)
-		return -1;
+		return NULL;
     return (v-nl+1);
 }
 
@@ -301,8 +301,8 @@ long *lvector(long nl, long nh)
 /* allocate a long int vector with subscript range v[nl..nh] */
 {
     long *v = (long *)malloc((size_t)((nh-nl+2) * sizeof(long)));
-    if (v == NULL)		
-		return -1;
+    if (v == NULL)
+		return NULL;
     return (v-nl+1);
 }
 
@@ -314,15 +314,15 @@ double **matrix(long nrl, long nrh, long ncl, long nch)
 
     /* allocate pointers to rows */
     m = (double **) malloc((size_t)((nrow+1) * sizeof(double*)));
-    if (!m) 		
-		return -1;
+    if (!m)
+		return NULL;
     m += 1;
     m -= nrl;
 
     /* allocate rows and set pointers to them */
     m[nrl] = (double *) malloc((size_t)((nrow*ncol+1) * sizeof(double)));
-    if (!m[nrl]) 		
-		return -2;
+    if (!m[nrl])
+		return NULL;
 
     m[nrl] += 1;
     m[nrl] -= ncl;
@@ -426,7 +426,7 @@ int *indxc, *indxr, *ipiv;
 void setup_dcca(int npts)
 {
     long i;
-    int j, k;
+    int j;
 
     beta = vector(1, nfit);
     covar = matrix(1, nfit, 1, nfit);
@@ -473,8 +473,8 @@ rdfa.c
 
 void rdfa(CONFIG *cfg, double *r_seq, long *r_rs,double *r_mse)
 {
-double sum, alpha, scale;
-int i,j,k;
+double alpha, scale;
+int i;
 
 iflag=cfg->IFLAG;
 minbox=cfg->MINBOX;
@@ -520,8 +520,8 @@ free(seq);
 
 void rdcca(CONFIG *cfg, double *r_seq1, double *r_seq2, long *r_rs,double *r_mse)
 {
-double sum, alpha, scale;
-int i,j,k;
+double alpha, scale;
+int i;
 
 iflag=cfg->IFLAG;
 minbox=cfg->MINBOX;

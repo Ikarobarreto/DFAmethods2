@@ -6,4 +6,7 @@ Meta
 .Rdata
 .httr-oauth
 .DS_Store
-docs
+desktop.ini
+src/*.o
+src/*.so
+src/*.dll

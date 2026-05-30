@@ -1,0 +1,32 @@
+url: https://ikarobarreto.github.io/DFAmethods2
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Single-series scaling
+  desc: Detrended fluctuation analysis of one series.
+  contents:
+  - dfa
+  - plotdfa
+- title: Cross-correlation
+  desc: Detrended cross-, partial- and multiple-correlation coefficients.
+  contents:
+  - rhodcca
+  - rhodpcca
+  - dmc2
+  - plotrdcca
+  - plotdcca
+- title: Detrended fractal regression
+  desc: Scale-wise regression coefficients and effect sizes.
+  contents:
+  - betadfa
+  - sbdfa
+  - fracreg
+  - effsizeDFA
+- title: Significance tests
+  desc: Surrogate-based tests for the scale-wise coefficients.
+  contents:
+  - fracreg.PStest
+  - fracreg.Ktest
+  - fracreg.IUTest

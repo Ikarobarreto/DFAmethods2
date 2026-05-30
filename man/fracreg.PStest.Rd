@@ -25,3 +25,15 @@ A matrix with scale-wise Beta-DFA and critic region of Podobnik-Shen Test.
 \description{
 Calculates Podobnik-Shen Test for Beta-DFA = 0
 }
+\references{
+Podobnik, B., Jiang, Z.-Q., Zhou, W.-X. and Stanley, H. E. (2011).
+Statistical tests for power-law cross-correlated processes. \emph{Physical
+Review E}, 84(6), 066118.
+
+Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
+\emph{Physics Letters A}, 379(44), 2962-2969.
+}
+\seealso{
+\code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}},
+\code{vignette("DFAmethods2")}
+}
