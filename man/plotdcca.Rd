@@ -4,7 +4,7 @@
 \alias{plotdcca}
 \title{Plot DCCA}
 \usage{
-plotdcca(dcca, seg = F, point = NULL, main)
+plotdcca(dcca, seg = FALSE, point = NULL, main = NULL)
 }
 \arguments{
 \item{dcca}{is a fracreg object}
@@ -20,4 +20,9 @@ a plot of Detrended Cross Correlation Analysis.
 }
 \description{
 Plot of Detrended Cross Correlation Analysis
+}
+\examples{
+# 'dcca' is a list with the box scales and the detrended covariance F^2_XY(s)
+dcca <- list(s = c(10, 20, 40, 80, 160), Fxy = c(50, 130, 320, 780, 1900))
+plotdcca(dcca)
 }

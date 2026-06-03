@@ -4,7 +4,7 @@
 \alias{rhodcca}
 \title{rho Detrended Cross-Correlation Coefficient}
 \usage{
-rhodcca(data, dpo = 1, int = T, np = 91, overlap = T)
+rhodcca(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,11 @@ Scale s, Rho-DCCA
 }
 \description{
 Calculates rho DCCA
+}
+\examples{
+set.seed(1)
+d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)))
+rhodcca(d, np = 20)
 }
 \references{
 Podobnik, B. and Stanley, H. E. (2008). Detrended cross-correlation analysis:

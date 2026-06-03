@@ -4,7 +4,7 @@
 \alias{effsizeDFA}
 \title{f² scale-wise effect sizes}
 \usage{
-effsizeDFA(data, dpo = 1, int = T, np = 91, overlap = T)
+effsizeDFA(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,12 @@ Scale s, f² scale-wise effect sizes
 }
 \description{
 Calculates f² scale-wise effect sizes
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+                x2 = cumsum(rnorm(300)))
+effsizeDFA(d, np = 20)
 }
 \references{
 Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).

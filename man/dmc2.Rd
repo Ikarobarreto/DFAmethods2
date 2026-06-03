@@ -4,7 +4,7 @@
 \alias{dmc2}
 \title{rho Detrended Multiple-Correlation Coefficient}
 \usage{
-dmc2(data, dpo = 1, int = T, np = 91, overlap = T)
+dmc2(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,12 @@ Scale s, Multiple Detrended Correlation
 }
 \description{
 Calculates DMC²
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+                x2 = cumsum(rnorm(300)))
+dmc2(d, np = 20)
 }
 \references{
 Zebende, G. F. and da Silva Filho, A. M. (2018). Detrended multiple

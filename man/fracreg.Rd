@@ -4,7 +4,7 @@
 \alias{fracreg}
 \title{Multiple Fractal Regression}
 \usage{
-fracreg(data, dpo, int, np = 91, overlap = T)
+fracreg(data, dpo, int, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series.}
@@ -24,6 +24,12 @@ Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T stati
 }
 \description{
 Calculates Fractal Regression.
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+                x2 = cumsum(rnorm(300)))
+fracreg(d, dpo = 1, int = TRUE, np = 20)
 }
 \references{
 Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).

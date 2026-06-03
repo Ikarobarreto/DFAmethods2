@@ -4,7 +4,7 @@
 \alias{fracreg.Ktest}
 \title{Kristoufek Test}
 \usage{
-fracreg.Ktest(data, B = 100, dpo = 1, int = T, np = 91, overlap = T)
+fracreg.Ktest(data, B = 100, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -24,6 +24,13 @@ A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test.
 }
 \description{
 Calculates Kristoufek Test for Beta-DFA = Beta-OLS
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+\donttest{
+fracreg.Ktest(d, B = 20, np = 15)
+}
 }
 \references{
 Kristoufek, L. (2015). Detrended fluctuation analysis as a regression

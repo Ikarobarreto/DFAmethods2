@@ -1,18 +1,19 @@
 ## Resubmission
 
-This is a resubmission. The previous submission (0.1.0) passed the incoming
-checks on Windows but failed on 64-bit Linux. In this version I have:
+This is a resubmission addressing the reviewer comments (Benjamin Altmann) on
+version 0.1.1:
 
-* Fixed a memory error (segmentation fault on 64-bit Linux). The box-size array
-  was passed from R via `.C()` as an integer vector but declared as `long *` in
-  C; on LP64 platforms `long` is 8 bytes while an R integer is 4 bytes, which
-  corrupted memory. The C code now uses `int *`, matching `as.integer()`.
-* Removed dead C code that wrote to `stderr` (the "compiled code ... 'stderr'"
-  note from the Debian check).
+* Replaced all uses of `T`/`F` with `TRUE`/`FALSE` in function arguments and
+  bodies, and renamed the `F` variable used inside `plotdfa()`/`plotdcca()`.
+* Added small executable examples to the Rd files of all exported functions, to
+  illustrate their use and enable automatic testing.
+* Replaced `print()`/`cat()` console messages with `warning()`/`stop()` in
+  `plotdcca()` and `plotrdcca()`.
 
 ## Test environments
 * local Windows 10 install, R 4.5.1
 * win-builder (R-devel)
+* GitHub Actions: Ubuntu (R-devel/release/oldrel), macOS, Windows
 
 ## R CMD check results
 

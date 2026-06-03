@@ -4,7 +4,7 @@
 \alias{fracreg.PStest}
 \title{Podobnik-Shen Test}
 \usage{
-fracreg.PStest(data, B = 100, dpo = 1, int = T, np = 91, overlap = T)
+fracreg.PStest(data, B = 100, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -24,6 +24,13 @@ A matrix with scale-wise Beta-DFA and critic region of Podobnik-Shen Test.
 }
 \description{
 Calculates Podobnik-Shen Test for Beta-DFA = 0
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+\donttest{
+fracreg.PStest(d, B = 20, np = 15)
+}
 }
 \references{
 Podobnik, B., Jiang, Z.-Q., Zhou, W.-X. and Stanley, H. E. (2011).

@@ -4,7 +4,7 @@
 \alias{plotdfa}
 \title{Plot DFA}
 \usage{
-plotdfa(dfa, seg = F, point = NULL, main)
+plotdfa(dfa, seg = FALSE, point = NULL, main = NULL)
 }
 \arguments{
 \item{dfa}{is a dfa object}
@@ -20,4 +20,9 @@ a plot of Detrended Fluctuation Analysis.
 }
 \description{
 Plot of Detrended Fluctuation Analysis
+}
+\examples{
+set.seed(1)
+x <- cumsum(rnorm(300))
+plotdfa(dfa(x, np = 20))
 }

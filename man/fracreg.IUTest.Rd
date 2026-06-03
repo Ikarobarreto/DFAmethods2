@@ -4,7 +4,7 @@
 \alias{fracreg.IUTest}
 \title{Intersection-Union Test}
 \usage{
-fracreg.IUTest(data, B = 100, dpo = 1, int = T, np = 91, overlap = T)
+fracreg.IUTest(data, B = 100, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -24,6 +24,13 @@ A matrix with scale-wise Beta-DFA and critic region of Kristoufek Test and Podob
 }
 \description{
 Calculates Intersection-Union Test for Beta-DFA = 0 or Beta-DFA = Beta-OLS
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+\donttest{
+fracreg.IUTest(d, B = 20, np = 15)
+}
 }
 \references{
 Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).

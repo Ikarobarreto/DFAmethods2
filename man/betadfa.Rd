@@ -4,7 +4,7 @@
 \alias{betadfa}
 \title{Beta DFA}
 \usage{
-betadfa(data, dpo = 1, int = T, np = 91, overlap = T)
+betadfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,12 @@ Scale s, Beta DFA estimates
 }
 \description{
 Calculates Beta DFA
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+                x2 = cumsum(rnorm(300)))
+betadfa(d, np = 20)
 }
 \references{
 Kristoufek, L. (2015). Detrended fluctuation analysis as a regression

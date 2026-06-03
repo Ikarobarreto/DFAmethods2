@@ -4,7 +4,7 @@
 \alias{sbdfa}
 \title{Standardized Beta DFA}
 \usage{
-sbdfa(data, dpo = 1, int = T, np = 91, overlap = T)
+sbdfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,12 @@ Scale s, Standardized Beta DFA estimates
 }
 \description{
 Calculates Standardized Beta DFA
+}
+\examples{
+set.seed(1)
+d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+                x2 = cumsum(rnorm(300)))
+sbdfa(d, np = 20)
 }
 \references{
 Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).

@@ -4,7 +4,7 @@
 \alias{bdfa}
 \title{Beta DFA}
 \usage{
-bdfa(data, dpo = 1, int = T, np = 91, overlap = T)
+bdfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}

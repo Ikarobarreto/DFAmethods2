@@ -4,7 +4,7 @@
 \alias{dfa}
 \title{Detrended Fluctuation Analysis}
 \usage{
-dfa(data, dpo = 1, int = T, np = 91, overlap = T)
+dfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a vector of time series}
@@ -22,6 +22,11 @@ Scale s, Detrended Fluctuation Function F
 }
 \description{
 Calculates DFA
+}
+\examples{
+set.seed(1)
+x <- cumsum(rnorm(300))
+dfa(x, np = 20)
 }
 \references{
 Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.

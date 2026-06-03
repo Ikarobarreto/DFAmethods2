@@ -4,7 +4,7 @@
 \alias{rhodpcca}
 \title{rho Detrended Partial Cross-Correlation Coefficient}
 \usage{
-rhodpcca(data, dpo = 1, int = T, np = 91, overlap = T)
+rhodpcca(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
 \item{data}{is a matrix of time series}
@@ -22,6 +22,12 @@ Scale s, Rho DPCCA
 }
 \description{
 Calculates DPCCA
+}
+\examples{
+set.seed(1)
+d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)),
+                z = cumsum(rnorm(300)))
+rhodpcca(d, np = 20)
 }
 \references{
 Yuan, N. et al. (2015). Detrended partial-cross-correlation analysis: a new

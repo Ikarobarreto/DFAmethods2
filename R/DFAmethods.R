@@ -128,9 +128,14 @@ utils::globalVariables(c("s", "rho"))
 #' @importFrom stats quantile
 #' @importFrom tseries surrogate
 #' @importFrom magrittr "%>%"
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' fracreg(d, dpo = 1, int = TRUE, np = 20)
 #' @useDynLib DFAmethods2, .registration=TRUE
 
-fracreg<-function(data,dpo,int,np=91,overlap=T){
+fracreg<-function(data,dpo,int,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
 	data<-as.matrix(data)
@@ -259,9 +264,13 @@ return(fracreg)
 #' \emph{Physical Review E}, 49(2), 1685-1689.
 #' @seealso \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' x <- cumsum(rnorm(300))
+#' dfa(x, np = 20)
 #' @export
 
-dfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+dfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "dfa")
 	.check_series(data, "dfa")
 	data<-as.matrix(data)
@@ -312,9 +321,13 @@ return(DFA)
 #' @importFrom tibble as_tibble
 #' @importFrom gdata upperTriangle
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)))
+#' rhodcca(d, np = 20)
 #' @export
 #'
-rhodcca<-function(data,dpo=1,int=T,np=91,overlap=T){
+rhodcca<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "rhodcca")
 	.check_matrix(data, 2, "rhodcca")
 	data<-as.matrix(data)
@@ -393,9 +406,14 @@ return(rhodcca)
 #' Reports}, 5, 8143.
 #' @seealso \code{\link{rhodcca}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)),
+#'                 z = cumsum(rnorm(300)))
+#' rhodpcca(d, np = 20)
 #' @export
 #'
-rhodpcca<-function(data,dpo=1,int=T,np=91,overlap=T){
+rhodpcca<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "rhodpcca")
 	.check_matrix(data, 3, "rhodpcca")
 	data<-as.matrix(data)
@@ -478,9 +496,14 @@ for(i in 1:(np-1)){
 #' Numerical Simulation}, 99, 105781.
 #' @seealso \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' dmc2(d, np = 20)
 #' @export
 
-dmc2<-function(data,dpo=1,int=T,np=91,overlap=T){
+dmc2<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "dmc2")
 	.check_matrix(data, 2, "dmc2")
 	data<-as.matrix(data)
@@ -565,9 +588,14 @@ return(DMC2)
 #' @seealso \code{\link{fracreg}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
 #' @importFrom dplyr inner_join
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' effsizeDFA(d, np = 20)
 #' @export
 
-effsizeDFA<-function(data,dpo=1,int=T,np=91,overlap=T){
+effsizeDFA<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
   .check_common(np, dpo, int, overlap, "effsizeDFA")
   .check_matrix(data, 3, "effsizeDFA")
   if(ncol(data)<3){warning("the number of regressors are lower than 2\nplease provide at least 2 independent variables")}
@@ -610,7 +638,7 @@ else{
 #' @keywords internal
 #' @useDynLib DFAmethods2, .registration=TRUE
 
-bdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+bdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	data<-as.matrix(data)
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
@@ -687,9 +715,14 @@ return(bdfa)
 #' @seealso \code{\link{sbdfa}}, \code{\link{fracreg}},
 #' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' betadfa(d, np = 20)
 #' @export
 
-betadfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+betadfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
   .check_common(np, dpo, int, overlap, "betadfa")
   .check_matrix(data, 2, "betadfa")
   nc<-ncol(data)
@@ -771,9 +804,14 @@ betadfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' E}, 91(2), 022802.
 #' @seealso \code{\link{betadfa}}, \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' sbdfa(d, np = 20)
 #' @export
 
-sbdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
+sbdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
   .check_common(np, dpo, int, overlap, "sbdfa")
   .check_matrix(data, 2, "sbdfa")
   nc<-ncol(data)
@@ -861,9 +899,15 @@ sbdfa<-function(data,dpo=1,int=T,np=91,overlap=T){
 #' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.IUTest}},
 #' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+#' \donttest{
+#' fracreg.Ktest(d, B = 20, np = 15)
+#' }
 #' @export
 
-fracreg.Ktest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+fracreg.Ktest<-function(data,B=100,dpo=1,int=TRUE,np=91,overlap=TRUE){
 .check_common(np, dpo, int, overlap, "fracreg.Ktest")
 .check_matrix(data, 2, "fracreg.Ktest")
 .check_B(B, "fracreg.Ktest")
@@ -874,7 +918,7 @@ pbdfa<-array(,dim=c(x,1,np,B))
 data<-as.matrix(data)
 res<-lm(data[,1]~data[,2:yx])$res
 coef<-lm(data[,1]~data[,2:yx])$coeff
-usur<-surrogate(res,ns=B,fft=T,amplitude=T)
+usur<-surrogate(res,ns=B,fft=TRUE,amplitude=TRUE)
 ysur<-matrix(,nrow=nrow(data),ncol=B)
 if(yx==2){
 	for(i in (1:B)){
@@ -935,9 +979,15 @@ return(cib)
 #' @seealso \code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}},
 #' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+#' \donttest{
+#' fracreg.PStest(d, B = 20, np = 15)
+#' }
 #' @export
 
-fracreg.PStest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+fracreg.PStest<-function(data,B=100,dpo=1,int=TRUE,np=91,overlap=TRUE){
   .check_common(np, dpo, int, overlap, "fracreg.PStest")
   .check_matrix(data, 2, "fracreg.PStest")
   .check_B(B, "fracreg.PStest")
@@ -945,7 +995,7 @@ fracreg.PStest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
 	n<-nrow(data)
 	m<-ncol(data)-1
 	test<-array(0,dim=c(m,1,np,B))
-	usur<-surrogate(data[,1],ns=B,fft=T,amplitude=T)
+	usur<-surrogate(data[,1],ns=B,fft=TRUE,amplitude=TRUE)
 	for(i in (1:B)){
 		data1<-cbind(usur[,i],data[,-1])
 		test[,,,i]<-bdfa(data1,dpo=dpo,int=int,np=np,overlap=overlap)$BDFA
@@ -988,9 +1038,15 @@ return(cib)
 #' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.Ktest}},
 #' \code{vignette("DFAmethods2")}
 #' @useDynLib DFAmethods2, .registration=TRUE
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
+#' \donttest{
+#' fracreg.IUTest(d, B = 20, np = 15)
+#' }
 #' @export
 
-fracreg.IUTest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
+fracreg.IUTest<-function(data,B=100,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	.check_common(np, dpo, int, overlap, "fracreg.IUTest")
 	.check_matrix(data, 2, "fracreg.IUTest")
 	.check_B(B, "fracreg.IUTest")
@@ -1021,39 +1077,43 @@ fracreg.IUTest<-function(data,B=100,dpo=1,int=T,np=91,overlap=T){
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 ggtitle
 #' @importFrom stats median
+#' @examples
+#' set.seed(1)
+#' x <- cumsum(rnorm(300))
+#' plotdfa(dfa(x, np = 20))
 #' @export
 
-plotdfa <- function(dfa,seg=F,point=NULL,main) {
-  if(seg==T){
+plotdfa <- function(dfa,seg=FALSE,point=NULL,main=NULL) {
+  if(seg){
     ind<-c(rep("A",point),rep("B",length(dfa[[1]])-point))
     s<-log10(dfa[[1]])
-    F<-log10(dfa[[2]])/2
-    df<-cbind.data.frame(s,F,ind)
-    alfa1<-round(lm(df$F~df$s,subset = df$ind=="A")$coefficients[[2]],3)
-    alfa2<-round(lm(df$F~df$s,subset = df$ind=="B")$coefficients[[2]],3)
-    p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=F,fill=ind))+
+    Fl<-log10(dfa[[2]])/2
+    df<-cbind.data.frame(s,Fl,ind)
+    alfa1<-round(lm(df$Fl~df$s,subset = df$ind=="A")$coefficients[[2]],3)
+    alfa2<-round(lm(df$Fl~df$s,subset = df$ind=="B")$coefficients[[2]],3)
+    p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl,fill=ind))+
       ggplot2::geom_jitter()+
       ggplot2::xlab(expression(log[10](s)))+
       ggplot2::ylab(expression(log[10](F[X]~(s))))+
       ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
       ggplot2::theme_bw()+
-      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
-      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
-      ggplot2::geom_smooth(method = "lm",se=F)+ggplot2::theme(legend.position = "none")+
+      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(Fl[1:point]))+
+      ggplot2::annotate("text",label=deparse(substitute(paste(alpha[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(Fl[point:length(s)])-0.1)+
+      ggplot2::geom_smooth(method = "lm",se=FALSE)+ggplot2::theme(legend.position = "none")+
       ggplot2::ggtitle(main)
     p1
   } else {
     s<-log10(dfa[[1]])
-    F<-log10(dfa[[2]])/2
-    df<-cbind.data.frame(s,F)
-    alfa<-round(lm(df$F~df$s)$coefficients[[2]],3)
-    p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=F))+
+    Fl<-log10(dfa[[2]])/2
+    df<-cbind.data.frame(s,Fl)
+    alfa<-round(lm(df$Fl~df$s)$coefficients[[2]],3)
+    p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl))+
       ggplot2::geom_jitter()+
       ggplot2::xlab(expression(log[10](s)))+
       ggplot2::ylab(expression(log[10](F[X]~(s))))+
       ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
-      ggplot2::theme_bw()+ggplot2::annotate("text",label=deparse(substitute(paste(alpha,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(F))+
-      ggplot2::geom_smooth(method = "lm",se=F,show.legend = F)+
+      ggplot2::theme_bw()+ggplot2::annotate("text",label=deparse(substitute(paste(alpha,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(Fl))+
+      ggplot2::geom_smooth(method = "lm",se=FALSE,show.legend = FALSE)+
       ggplot2::ggtitle(main)
     p1
   }
@@ -1067,43 +1127,48 @@ plotdfa <- function(dfa,seg=F,point=NULL,main) {
 #' @param point indicate in which point segmented alpha DFA should be calculated
 #' @param main plot title
 #' @return a plot of Detrended Cross Correlation Analysis.
+#' @examples
+#' # 'dcca' is a list with the box scales and the detrended covariance F^2_XY(s)
+#' dcca <- list(s = c(10, 20, 40, 80, 160), Fxy = c(50, 130, 320, 780, 1900))
+#' plotdcca(dcca)
 #' @export
 
-plotdcca <- function(dcca,seg=F,point=NULL,main) {
-  if(dcca[[2]]<0){
-    print("Negative Detredended Covariance Function values")
+plotdcca <- function(dcca,seg=FALSE,point=NULL,main=NULL) {
+  if(any(dcca[[2]]<0)){
+    warning("negative detrended covariance values; cannot take the logarithm")
+    return(invisible(NULL))
   } else{
-    if(seg==T){
+    if(seg){
       ind<-c(rep("A",point),rep("B",length(dcca[[1]])-point))
       s<-log10(dcca[[1]])
-      F<-log10(dcca[[2]])/2
-      df<-cbind.data.frame(s,F,ind)
-      alfa1<-round(lm(df$F~df$s,subset = df$ind=="A")$coefficients[[2]],3)
-      alfa2<-round(lm(df$F~df$s,subset = df$ind=="B")$coefficients[[2]],3)
-      p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=F,fill=ind))+
+      Fl<-log10(dcca[[2]])/2
+      df<-cbind.data.frame(s,Fl,ind)
+      alfa1<-round(lm(df$Fl~df$s,subset = df$ind=="A")$coefficients[[2]],3)
+      alfa2<-round(lm(df$Fl~df$s,subset = df$ind=="B")$coefficients[[2]],3)
+      p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl,fill=ind))+
         ggplot2::geom_jitter()+
         ggplot2::xlab(expression(log[10](s)))+
         ggplot2::ylab(expression(log[10](F[XY]~(s))))+
         ggplot2::theme_bw()+
         ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
-        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(F[1:point]))+
-        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(F[point:length(s)])-0.1)+
-        ggplot2::geom_smooth(method = "lm",se=F)+ggplot2::theme(legend.position = "none")+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[1],"=",a),list(a=alfa1))),parse=TRUE,x = mean(s[1:point])-0.2*mean(s),y=median(Fl[1:point]))+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda[2],"=",b),list(b=alfa2))),parse=TRUE,x = mean(s[point:length(s)]),y=median(Fl[point:length(s)])-0.1)+
+        ggplot2::geom_smooth(method = "lm",se=FALSE)+ggplot2::theme(legend.position = "none")+
         ggplot2::ggtitle(main)
       p1
     } else {
       s<-log10(dcca[[1]])
-      F<-log10(dcca[[2]])/2
-      df<-cbind.data.frame(s,F)
-      alfa<-round(lm(df$F~df$s)$coefficients[[2]],3)
-      p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=F))+
+      Fl<-log10(dcca[[2]])/2
+      df<-cbind.data.frame(s,Fl)
+      alfa<-round(lm(df$Fl~df$s)$coefficients[[2]],3)
+      p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl))+
         ggplot2::geom_jitter()+
         ggplot2::xlab(expression(log[10](s)))+
         ggplot2::ylab(expression(log[10](F[XY]~(s))))+
         ggplot2::scale_x_continuous(breaks=seq(min(s),max(s),by=0.25))+
         ggplot2::theme_bw()+
-        ggplot2::annotate("text",label=deparse(substitute(paste(lambda,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(F))+
-        ggplot2::geom_smooth(method = "lm",se=F,show.legend = F)+
+        ggplot2::annotate("text",label=deparse(substitute(paste(lambda,"=",a),list(a=alfa))),parse=TRUE,x = unname(quantile(s,0.25)),y=median(Fl))+
+        ggplot2::geom_smooth(method = "lm",se=FALSE,show.legend = FALSE)+
         ggplot2::ggtitle(main)
       p1
     }
@@ -1116,10 +1181,14 @@ plotdcca <- function(dcca,seg=F,point=NULL,main) {
 #' @param var character. Indicate which pair in rho dcca object you want to plot.
 #' @return a plot of Detrended Cross Correlation Analysis.
 #' @importFrom dplyr select filter mutate rename row_number n ends_with
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)))
+#' plotrdcca(rhodcca(d, np = 20), var = "12")
 #' @export
 
 plotrdcca <- function(rdcca,var) {
-  if(nchar(var)!=2){print("Var must have length 2")}
+  if(nchar(var)!=2){stop("`var` must be a string of exactly 2 characters")}
   else{
 
     df<-rdcca %>%
