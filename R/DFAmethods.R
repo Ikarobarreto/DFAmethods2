@@ -426,6 +426,113 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
   list(np = np, k = k, n = n, scales = s, perscale = perscale)
 }
 
+# Internal: Ts x B matrix of wild-bootstrap multiplier weights, E[w]=0, Var[w]=1.
+.wb_weights <- function(Ts, B, type, bandwidth) {
+  if (type == "rademacher") {
+    matrix(sample(c(-1, 1), Ts * B, replace = TRUE), Ts, B)
+  } else if (type == "mammen") {
+    p <- (sqrt(5) + 1) / (2 * sqrt(5))
+    matrix(ifelse(stats::runif(Ts * B) < p, -(sqrt(5) - 1) / 2, (sqrt(5) + 1) / 2),
+           Ts, B)
+  } else {  # "dependent" wild bootstrap (Shao 2010): Bartlett-kernel Gaussian
+    l <- if (is.null(bandwidth)) max(1, Ts^(1 / 3)) else bandwidth
+    d <- abs(outer(seq_len(Ts), seq_len(Ts), "-")) / l
+    K <- pmax(1 - d, 0)                                   # Bartlett kernel (PSD)
+    U <- chol(K + diag(1e-8, Ts))                         # K = U'U
+    t(U) %*% matrix(stats::rnorm(Ts * B), Ts, B)
+  }
+}
+
+#' Wild bootstrap inference for the fractal regression
+#'
+#' Wild-bootstrap confidence intervals and significance for the scale-dependent
+#' regression coefficients. It resamples the per-box detrended-moment scores
+#' (the same scores used by \code{fracreg(vcov = "HC")}), so it is robust to
+#' heteroscedasticity and -- with dependent weights -- to dependence between
+#' boxes, and it does not recompute the DFA for each replicate.
+#'
+#' @details
+#' For each scale \eqn{s} with \eqn{T_s} boxes, scores \eqn{r_v} and inverse
+#' \eqn{F_{XX}(s)^{-1}}, each replicate is
+#' \eqn{\hat\beta^*_b(s) = \hat\beta(s) + F_{XX}(s)^{-1}\,(1/T_s)\sum_v r_v w_{v,b}}.
+#' The interval is the 2.5\% / 97.5\% quantiles of \eqn{\hat\beta^*_b(s)}; the
+#' two-sided p-value tests \eqn{H_0\!: \beta_j(s) = 0}. The \code{"dependent"}
+#' weights (Shao 2010) keep coverage when the boxes are dependent (e.g. strong
+#' long memory), where the analytic t and the i.i.d. weights can fail.
+#'
+#' @param data a matrix or data frame; first column the response, the rest the
+#'   predictors.
+#' @param B number of bootstrap replicates.
+#' @param weights multiplier-weight scheme: \code{"dependent"} (Shao 2010),
+#'   \code{"rademacher"} or \code{"mammen"}.
+#' @param bandwidth kernel bandwidth for \code{"dependent"} weights; defaults to
+#'   \eqn{T_s^{1/3}} per scale.
+#' @param dpo detrending polynomial order.
+#' @param int logical. If TRUE the integration process is applied.
+#' @param np number of point scales.
+#' @param overlap logical. If TRUE overlapping windows are used (non-overlapping
+#'   boxes, the default, are recommended for resampling).
+#' @param abs logical. If TRUE the absolute detrended covariance is used.
+#' @return A tibble with the scale \code{s} and, per predictor, the estimate
+#'   (\code{beta_*}), the lower/upper interval bounds (\code{lower_*},
+#'   \code{upper_*}) and the p-value (\code{p_*}), one row per scale.
+#' @references
+#' Shao, X. (2010). The dependent wild bootstrap. \emph{Journal of the American
+#' Statistical Association}, 105(489), 218-235.
+#'
+#' Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional linear
+#' models. \emph{The Annals of Statistics}, 21(1), 255-285.
+#'
+#' Tilfani, O., Kristoufek, L., Ferreira, P. and El Boukfaoui, M. Y. (2022).
+#' Heterogeneity in economic relationships: scale dependence through the
+#' multivariate fractal regression. \emph{Physica A}, 588, 126530.
+#' @seealso \code{\link{fracreg}}, \code{\link{fracreg.IUTest}},
+#' \code{vignette("DFAmethods2")}
+#' @importFrom stats quantile rnorm runif
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' \donttest{
+#' fracreg.WB(d, B = 199, np = 15)
+#' }
+#' @export
+fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "mammen"),
+                       bandwidth = NULL, dpo = 1, int = TRUE, np = 91,
+                       overlap = FALSE, abs = FALSE) {
+  weights <- match.arg(weights)
+  .check_common(np, dpo, int, overlap, "fracreg.WB")
+  .check_matrix(data, 2, "fracreg.WB")
+  .check_B(B, "fracreg.WB")
+  data <- as.matrix(data)
+  nc <- ncol(data); k <- nc - 1L
+  cn <- colnames(data); if (is.null(cn)) cn <- paste0("x", seq_len(nc))
+  pred <- cn[2:nc]
+
+  pb <- .fracreg_perbox(data, dpo = dpo, int = int, np = np, overlap = overlap, abs = abs)
+  s <- pb$scales
+  beta <- lower <- upper <- pval <- matrix(NA_real_, np, k)
+  for (ki in seq_len(np)) {
+    ps <- pb$perscale[[ki]]; Ts <- ps$Ts
+    beta[ki, ] <- ps$beta
+    W  <- .wb_weights(Ts, B, weights, bandwidth)              # Ts x B
+    BS <- ps$beta + ps$Fxx_inv %*% (crossprod(ps$scores, W) / Ts)   # k x B
+    for (j in seq_len(k)) {
+      q <- stats::quantile(BS[j, ], c(0.025, 0.975), na.rm = TRUE)
+      lower[ki, j] <- q[1]; upper[ki, j] <- q[2]
+      pval[ki, j]  <- 2 * min(mean(BS[j, ] <= 0), mean(BS[j, ] >= 0))
+    }
+  }
+  out <- data.frame(s = s)
+  for (j in seq_len(k)) {
+    out[[paste0("beta_",  pred[j])]] <- beta[, j]
+    out[[paste0("lower_", pred[j])]] <- lower[, j]
+    out[[paste0("upper_", pred[j])]] <- upper[, j]
+    out[[paste0("p_",     pred[j])]] <- pval[, j]
+  }
+  tibble::as_tibble(out)
+}
+
 #' Detrended Fluctuation Analysis
 #'
 #' Calculates DFA

@@ -34,6 +34,11 @@
   scale-wise correlation matrix, and the adjusted coefficient of determination
   `$R2adj` (Tilfani et al. 2022, Eq. 26).
 * New `fracreg.diag()` returns those scale-wise diagnostics as a tidy tibble.
+* New `fracreg.WB()`: wild-bootstrap confidence intervals and p-values for the
+  scale-dependent coefficients, robust to heteroscedasticity and (with the
+  default `"dependent"` weights, Shao 2010) to dependence between boxes. It
+  resamples the per-box moment scores, so it does not recompute the DFA per
+  replicate; the i.i.d. weights reproduce the `vcov = "HC"` sandwich variance.
 
 # DFAmethods2 0.1.2
 
