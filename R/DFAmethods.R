@@ -95,19 +95,46 @@ utils::globalVariables(c("s", "rho"))
 
 #' Multiple Fractal Regression
 #'
-#' Calculates Fractal Regression.
-#' @param data is a matrix of time series.
-#' @param dpo Detrending polynomial order.
-#' @param int logical. if TRUE integration process will be applied.
+#' Calculates the scale-dependent (DFA-based) multiple linear regression: the
+#' coefficients, their variance and confidence intervals at each scale, together
+#' with scale-wise collinearity diagnostics.
+#'
+#' @details
+#' The variance of the scale-dependent coefficients follows Tilfani et al.
+#' (2022, Eq. 25), \eqn{\mathrm{var}(\hat\beta_j(s)) = F^2_\varepsilon(s)
+#' [F_{XX}(s)^{-1}]_{jj}}, i.e. it uses the full inverse of the detrended
+#' covariance matrix of the predictors, consistent with how the coefficients
+#' themselves are estimated. Under collinearity this differs from the legacy
+#' "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
+#' the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
+#' reproduce the legacy behaviour.
+#'
+#' @param data a matrix or data frame of time series; the first column is the
+#'   response and the remaining columns are the predictors.
+#' @param dpo detrending polynomial order.
+#' @param int logical. If TRUE the integration process is applied.
 #' @param np number of point scales.
-#' @param overlap logical. if TRUE overlapping windows will be applied.
-#' @return Scale s, Detrended Fluctuation Function F, Rho-DCCA, Rho DPCCA,
-#' Beta DFA estimates, Standardized Beta DFA estimates, DFA Residuals, DFA Variance, DFA Upper and Lower confidence interval,
-#' Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T statistics.
+#' @param overlap logical. If TRUE overlapping windows are applied.
+#' @param vcov coefficient-variance estimator: \code{"inverse"} (default; full
+#'   \eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022) or \code{"marginal"} (legacy
+#'   \eqn{1/F^2_{X_j}(s)}, Shen 2015).
+#' @param abs logical. If TRUE the absolute detrended covariance is used in the
+#'   cross-correlation step (more robust to outliers).
+#' @return A list with, among others: scale \code{s}, detrended fluctuation
+#'   \code{F}, \code{DCCA}, \code{DPCCA}, beta estimates \code{BDFA},
+#'   standardized betas \code{BSDFA}, residual variance \code{UDFA}, coefficient
+#'   variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
+#'   confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
+#'   \code{TC}, and the scale-wise diagnostics \code{VIF}, condition number
+#'   \code{kappa} and adjusted \code{R2adj}.
 #' @references
 #' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
 #' Extending DFA-based multiple linear regression inference: application to
 #' acoustic impedance models. \emph{Physica A}, 582, 126259.
+#'
+#' Tilfani, O., Kristoufek, L., Ferreira, P. and El Boukfaoui, M. Y. (2022).
+#' Heterogeneity in economic relationships: scale dependence through the
+#' multivariate fractal regression. \emph{Physica A}, 588, 126530.
 #'
 #' Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
 #' \emph{Physics Letters A}, 379(44), 2962-2969.
@@ -115,8 +142,8 @@ utils::globalVariables(c("s", "rho"))
 #' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
 #' framework: estimating dependence at different scales. \emph{Physical Review
 #' E}, 91(2), 022802.
-#' @seealso \code{\link{betadfa}}, \code{\link{effsizeDFA}},
-#' \code{vignette("DFAmethods2")}
+#' @seealso \code{\link{fracreg.diag}}, \code{\link{betadfa}},
+#' \code{\link{effsizeDFA}}, \code{vignette("DFAmethods2")}
 #' @export
 #' @importFrom stats pt
 #' @importFrom stats qt
@@ -135,9 +162,12 @@ utils::globalVariables(c("s", "rho"))
 #' fracreg(d, dpo = 1, int = TRUE, np = 20)
 #' @useDynLib DFAmethods2, .registration=TRUE
 
-fracreg<-function(data,dpo,int,np=91,overlap=TRUE){
+fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal"),abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
+	vcov<-match.arg(vcov)
+	if(!is.logical(abs)||length(abs)!=1L||is.na(abs))
+		stop("fracreg(): `abs` must be a single TRUE or FALSE.", call.=FALSE)
 	data<-as.matrix(data)
 	dpo<-as.numeric(dpo+1)
 	if (int ==TRUE){int=1} else{int=0}
@@ -158,6 +188,9 @@ fracreg<-function(data,dpo,int,np=91,overlap=TRUE){
 	vn2<-array(,dim=c(1,(nc-1),np)) #Variância dos Parâmetros Bdfa(s)
 	tn<-array(,dim=c((nc-1),1,np)) #p-valor para os Bdfas
 	tnc<-array(,dim=c((nc-1),1,np)) #T crítico
+	VIFn<-array(,dim=c(1,(nc-1),np)) #scale-wise VIF
+	kappan<-array(,dim=c(1,1,np)) #scale-wise condition number
+	r2adj<-array(,dim=c(1,1,np)) #scale-wise adjusted R2
 	size=nrow(data)
 #DFA
 	for (i in 1:nc)
@@ -191,7 +224,7 @@ NR 	<- as.numeric(np)	# number of box sizes
 SW 	<- as.numeric(overlap)		# sliding window
 MINBOX	<- 10		# minimum box size
 MAXBOX	<- as.numeric(mx)	# maximum box size
-ABSFLAG	<- 0		# absolute flag for dcca
+ABSFLAG	<- as.numeric(abs)		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
@@ -232,8 +265,28 @@ u<-NULL
 u1<-NULL
 }
 for(k in 1:np){
+	F2eps<-fn[1,1,k]-dmc2[k]*fn[1,1,k]   # detrended residual variance F^2_eps(s)
+	# Coefficient (co)variance matrix of the predictors and its inverse (reused
+	# from the beta estimate). The variance of beta_j(s) is, per Tilfani et al.
+	# (2022, Eq. 25), F^2_eps(s) * [F_XX(s)^-1]_jj -- the FULL inverse, which the
+	# legacy "marginal" form (1 / F^2_Xj(s)) only matches under orthogonality.
+	Mk<-solve(matrix(fn[(2:nc),(2:nc),k],nc-1,nc-1))
+	# Scale-wise collinearity diagnostics from the correlation matrix.
+	Pk<-matrix(pn[(2:nc),(2:nc),k],nc-1,nc-1)
+	VIFn[1,,k]<-diag(solve(Pk))                      # = 1/(1 - R^2_j(s))
+	ev<-eigen(Pk,only.values=TRUE)$values
+	kappan[1,1,k]<-max(ev)/min(ev)                   # condition number
+	# Adjusted R^2 (Tilfani Eq. 26). F^2_eps/F^2_y is taken as 1 - DMC(s), the
+	# model-based residual fraction, consistent with the variance estimator and
+	# bounded to (-Inf, 1] (the direct residual DFA can be unstable at extreme
+	# scales).
+	r2adj[1,1,k]<-1-((size-1)/(size-(nc-1)-1))*(1-dmc2[k])
 	for(i in (2:nc)){
-	  vn[,(i-1),k]<-((fn[1,1,k]-dmc2[k]*fn[1,1,k])/(fn[i,i,k]))*(1/(sn[[k]]-nc-2))
+	  if(vcov=="inverse"){
+	    vn[,(i-1),k]<-F2eps*Mk[(i-1),(i-1)]*(1/(sn[[k]]-nc-2))
+	  }else{
+	    vn[,(i-1),k]<-F2eps*(1/fn[i,i,k])*(1/(sn[[k]]-nc-2))
+	  }
 	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
 		}}
 for(k in 1:np){
@@ -244,10 +297,54 @@ for(k in 1:np){
 	tnc[i,1,k]<-as.matrix(qt(0.975,df=((size/sn[[k]])-nc))*sqrt(vn[1,i,k]))
 	}}
 
-fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc)
-names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC")
+fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj)
+names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj")
 
 return(fracreg)
+}
+
+#' Scale-wise collinearity diagnostics for the fractal regression
+#'
+#' Returns scale-dependent multicollinearity diagnostics for the DFA-based
+#' multiple regression: the variance inflation factors (VIF), the condition
+#' number (\code{kappa}) of the predictors' scale-wise correlation matrix, and
+#' the scale-wise adjusted coefficient of determination. These reveal
+#' multicollinearity that depends on the time scale.
+#'
+#' @param data a matrix or data frame of time series; the first column is the
+#'   response and the remaining columns are the predictors.
+#' @param dpo detrending polynomial order.
+#' @param int logical. If TRUE the integration process is applied.
+#' @param np number of point scales.
+#' @param overlap logical. If TRUE overlapping windows are applied.
+#' @param abs logical. If TRUE the absolute detrended covariance is used.
+#' @return A tibble with the scale \code{s}, one \code{VIF_*} column per
+#'   predictor, the condition number \code{kappa} and the adjusted \code{R2adj},
+#'   one row per scale.
+#' @references
+#' Tilfani, O., Kristoufek, L., Ferreira, P. and El Boukfaoui, M. Y. (2022).
+#' Heterogeneity in economic relationships: scale dependence through the
+#' multivariate fractal regression. \emph{Physica A}, 588, 126530.
+#' @seealso \code{\link{fracreg}}, \code{vignette("DFAmethods2")}
+#' @importFrom tibble as_tibble
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
+#'                 x2 = cumsum(rnorm(300)))
+#' fracreg.diag(d, np = 20)
+#' @export
+fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs = FALSE) {
+  fit <- fracreg(data, dpo = dpo, int = int, np = np, overlap = overlap,
+                 vcov = "inverse", abs = abs)
+  nc <- ncol(as.matrix(data))
+  cn <- colnames(data)
+  if (is.null(cn)) cn <- paste0("x", seq_len(nc))
+  vif <- t(matrix(fit$VIF[1, , ], nrow = nc - 1))
+  colnames(vif) <- paste0("VIF_", cn[2:nc])
+  out <- cbind.data.frame(s = fit$s, vif,
+                          kappa = as.vector(fit$kappa),
+                          R2adj = as.vector(fit$R2adj))
+  tibble::as_tibble(out)
 }
 
 #' Detrended Fluctuation Analysis

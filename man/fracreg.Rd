@@ -4,26 +4,58 @@
 \alias{fracreg}
 \title{Multiple Fractal Regression}
 \usage{
-fracreg(data, dpo, int, np = 91, overlap = TRUE)
+fracreg(
+  data,
+  dpo,
+  int,
+  np = 91,
+  overlap = TRUE,
+  vcov = c("inverse", "marginal"),
+  abs = FALSE
+)
 }
 \arguments{
-\item{data}{is a matrix of time series.}
+\item{data}{a matrix or data frame of time series; the first column is the
+response and the remaining columns are the predictors.}
 
-\item{dpo}{Detrending polynomial order.}
+\item{dpo}{detrending polynomial order.}
 
-\item{int}{logical. if TRUE integration process will be applied.}
+\item{int}{logical. If TRUE the integration process is applied.}
 
 \item{np}{number of point scales.}
 
-\item{overlap}{logical. if TRUE overlapping windows will be applied.}
+\item{overlap}{logical. If TRUE overlapping windows are applied.}
+
+\item{vcov}{coefficient-variance estimator: \code{"inverse"} (default; full
+\eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022) or \code{"marginal"} (legacy
+\eqn{1/F^2_{X_j}(s)}, Shen 2015).}
+
+\item{abs}{logical. If TRUE the absolute detrended covariance is used in the
+cross-correlation step (more robust to outliers).}
 }
 \value{
-Scale s, Detrended Fluctuation Function F, Rho-DCCA, Rho DPCCA,
-Beta DFA estimates, Standardized Beta DFA estimates, DFA Residuals, DFA Variance, DFA Upper and Lower confidence interval,
-Multiple Detrended Correlation, DFA R² , DFA p-value and DFA Calculated T statistics.
+A list with, among others: scale \code{s}, detrended fluctuation
+  \code{F}, \code{DCCA}, \code{DPCCA}, beta estimates \code{BDFA},
+  standardized betas \code{BSDFA}, residual variance \code{UDFA}, coefficient
+  variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
+  confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
+  \code{TC}, and the scale-wise diagnostics \code{VIF}, condition number
+  \code{kappa} and adjusted \code{R2adj}.
 }
 \description{
-Calculates Fractal Regression.
+Calculates the scale-dependent (DFA-based) multiple linear regression: the
+coefficients, their variance and confidence intervals at each scale, together
+with scale-wise collinearity diagnostics.
+}
+\details{
+The variance of the scale-dependent coefficients follows Tilfani et al.
+(2022, Eq. 25), \eqn{\mathrm{var}(\hat\beta_j(s)) = F^2_\varepsilon(s)
+[F_{XX}(s)^{-1}]_{jj}}, i.e. it uses the full inverse of the detrended
+covariance matrix of the predictors, consistent with how the coefficients
+themselves are estimated. Under collinearity this differs from the legacy
+"marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
+the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
+reproduce the legacy behaviour.
 }
 \examples{
 set.seed(1)
@@ -36,6 +68,10 @@ Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
 Extending DFA-based multiple linear regression inference: application to
 acoustic impedance models. \emph{Physica A}, 582, 126259.
 
+Tilfani, O., Kristoufek, L., Ferreira, P. and El Boukfaoui, M. Y. (2022).
+Heterogeneity in economic relationships: scale dependence through the
+multivariate fractal regression. \emph{Physica A}, 588, 126530.
+
 Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
 \emph{Physics Letters A}, 379(44), 2962-2969.
 
@@ -44,6 +80,6 @@ framework: estimating dependence at different scales. \emph{Physical Review
 E}, 91(2), 022802.
 }
 \seealso{
-\code{\link{betadfa}}, \code{\link{effsizeDFA}},
-\code{vignette("DFAmethods2")}
+\code{\link{fracreg.diag}}, \code{\link{betadfa}},
+\code{\link{effsizeDFA}}, \code{vignette("DFAmethods2")}
 }
