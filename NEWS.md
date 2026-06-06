@@ -1,4 +1,4 @@
-# DFAmethods2 0.1.3
+# DFAmethods2 0.1.4
 
 ## Behaviour change
 

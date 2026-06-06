@@ -1,6 +1,6 @@
 ## Update
 
-This is a minor update (0.1.3).
+This is a minor update (0.1.4).
 
 * The coefficient-variance estimator in `fracreg()` now uses the full inverse of
   the predictors' detrended covariance matrix (Tilfani et al. 2022, Eq. 25),
