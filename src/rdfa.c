@@ -84,6 +84,7 @@ void run_dfa(double *seq, int npts)
 
 double **x;	/* matrix of abscissas and their powers, for polyfit(). */
 long pboxsize = 0L;	/* polyfit() covar0 cache key; reset by setup()/setup_dcca() */
+double *box = NULL;	/* optional per-box (co)variance output; NULL = disabled */
 
 /* Detrended fluctuation analysis
     seq:	input data array
@@ -96,15 +97,18 @@ long pboxsize = 0L;	/* polyfit() covar0 cache key; reset by setup()/setup_dcca()
 */
 void dfa(double *seq, long npts, int nfit, int *rs, int nr, int sw)
 {
-    long i, boxsize, inc, j;
-    double stat;
+    long i, boxsize, inc, j, b;
+    double stat, chisq;
 
     for (i = 1; i <= nr; i++) {
         boxsize = rs[i];
         if (sw) { inc = 1; stat = (int)(npts - boxsize + 1) * boxsize; }
 	else { inc = boxsize; stat = (int)(npts / boxsize) * boxsize; }
-        for (mse[i] = 0.0, j = 0; j <= npts - boxsize; j += inc)
-            mse[i] += polyfit(x, seq + j, 0, boxsize, nfit);
+        for (mse[i] = 0.0, j = 0, b = 0; j <= npts - boxsize; j += inc, b++) {
+            chisq = polyfit(x, seq + j, 0, boxsize, nfit);
+            mse[i] += chisq;
+            if (box) box[(i-1)*npts + b] = chisq / boxsize;   /* per-box variance */
+        }
         mse[i] /= stat;
     }
 }
@@ -365,8 +369,8 @@ double **x2;	/* matrix of abscissas and their powers, for polyfit(). */
 */
 void dcca(double *seq1, double *seq2, long npts, int nfit, int *rs, int nr, int sw)
 {
-    long i, boxsize, inc, j, k;
-    double stat, temp;
+    long i, boxsize, inc, j, k, b;
+    double stat, temp, boxsum;
 
     for (i = 1; i <= nr; i++) {
         boxsize = rs[i];
@@ -374,19 +378,22 @@ void dcca(double *seq1, double *seq2, long npts, int nfit, int *rs, int nr, int 
 	else { inc = boxsize; stat = (int)(npts / boxsize) * boxsize; }
 
 		mse[i]=0.0;
-        for (j = 0; j <= npts - boxsize; j += inc)
+        for (j = 0, b = 0; j <= npts - boxsize; j += inc, b++)
 			{
             polyfit(x1, seq1 + j, dif1+j, boxsize, nfit);
             polyfit(x2, seq2 + j, dif2+j, boxsize, nfit);
+			boxsum=0.0;
 			for (k = 1; k <= boxsize; k++)
 				{
 				temp=dif1[j+k]*dif2[j+k];
 				if(absflag)
 					temp=fabs(temp);
-				mse[i]+=temp;
+				boxsum+=temp;
 				}
+			mse[i]+=boxsum;
+			if (box) box[(i-1)*npts + b] = boxsum / boxsize;   /* per-box covariance */
 			}
-        mse[i] /= stat;		
+        mse[i] /= stat;
     }
 }
 
@@ -542,6 +549,26 @@ run_dcca(seq1, seq2, npts);
 
 free(seq1);
 free(seq2);
+}
+
+/************************************************************************************/
+/* Per-box variants: same as rdfa()/rdcca() but also fill r_box (length nr*npts)
+   with the per-box detrended (co)variance S(s,v); mean over the T_s boxes of a
+   scale equals the corresponding F^2(s). Used to assemble HC / wild-bootstrap /
+   surrogate machinery on the R side. */
+
+void rdfa_box(CONFIG *cfg, double *r_seq, int *r_rs, double *r_mse, double *r_box)
+{
+	box = r_box;
+	rdfa(cfg, r_seq, r_rs, r_mse);
+	box = NULL;
+}
+
+void rdcca_box(CONFIG *cfg, double *r_seq1, double *r_seq2, int *r_rs, double *r_mse, double *r_box)
+{
+	box = r_box;
+	rdcca(cfg, r_seq1, r_seq2, r_rs, r_mse);
+	box = NULL;
 }
 
 

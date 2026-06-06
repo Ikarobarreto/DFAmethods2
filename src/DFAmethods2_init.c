@@ -8,10 +8,14 @@
 /* .C calls */
 extern void rdcca(void *, void *, void *, void *, void *);
 extern void rdfa(void *, void *, void *, void *);
+extern void rdcca_box(void *, void *, void *, void *, void *, void *);
+extern void rdfa_box(void *, void *, void *, void *, void *);
 
 static const R_CMethodDef CEntries[] = {
-  {"rdcca", (DL_FUNC) &rdcca, 5},
-  {"rdfa",  (DL_FUNC) &rdfa,  4},
+  {"rdcca",     (DL_FUNC) &rdcca,     5},
+  {"rdfa",      (DL_FUNC) &rdfa,      4},
+  {"rdcca_box", (DL_FUNC) &rdcca_box, 6},
+  {"rdfa_box",  (DL_FUNC) &rdfa_box,  5},
   {NULL, NULL, 0}
 };
 
