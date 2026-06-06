@@ -23,9 +23,12 @@
 
 ## New features
 
-* `fracreg()` gains a `vcov = c("inverse", "marginal")` argument (default
+* `fracreg()` gains a `vcov = c("inverse", "marginal", "HC")` argument (default
   `"inverse"`) and an `abs` argument to use the absolute detrended covariance in
-  the cross-correlation step (more robust to outliers).
+  the cross-correlation step (more robust to outliers). `vcov = "HC"` is an
+  experimental heteroscedasticity-consistent (sandwich) estimator built from new
+  per-box detrended-moment scores; `overlap = FALSE` is recommended and its
+  finite-sample normalisation is still being calibrated.
 * `fracreg()` now also returns scale-wise collinearity diagnostics: the variance
   inflation factors `$VIF`, the condition number `$kappa` of the predictors'
   scale-wise correlation matrix, and the adjusted coefficient of determination

@@ -116,8 +116,11 @@ utils::globalVariables(c("s", "rho"))
 #' @param np number of point scales.
 #' @param overlap logical. If TRUE overlapping windows are applied.
 #' @param vcov coefficient-variance estimator: \code{"inverse"} (default; full
-#'   \eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022) or \code{"marginal"} (legacy
-#'   \eqn{1/F^2_{X_j}(s)}, Shen 2015).
+#'   \eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022), \code{"marginal"} (legacy
+#'   \eqn{1/F^2_{X_j}(s)}, Shen 2015), or \code{"HC"} (experimental
+#'   heteroscedasticity-consistent sandwich built from the per-box detrended
+#'   moment scores; \code{overlap = FALSE} is recommended and the finite-sample
+#'   normalisation is still being calibrated).
 #' @param abs logical. If TRUE the absolute detrended covariance is used in the
 #'   cross-correlation step (more robust to outliers).
 #' @return A list with, among others: scale \code{s}, detrended fluctuation
@@ -162,7 +165,7 @@ utils::globalVariables(c("s", "rho"))
 #' fracreg(d, dpo = 1, int = TRUE, np = 20)
 #' @useDynLib DFAmethods2, .registration=TRUE
 
-fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal"),abs=FALSE){
+fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal","HC"),abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
 	vcov<-match.arg(vcov)
@@ -289,6 +292,20 @@ for(k in 1:np){
 	  }
 	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
 		}}
+if(vcov=="HC"){
+	# Heteroscedasticity-consistent (sandwich) variance, per scale s:
+	# Var_HC = (1/Ts) F_XX^-1 Omega F_XX^-1, Omega = (1/Ts) sum_v r_v r_v' (HC1),
+	# from the per-box moment scores r_v = s_xy(s,v) - S_xx(s,v) beta_hat.
+	# Non-overlapping boxes (overlap = FALSE) are recommended for the sandwich.
+	pb<-.fracreg_perbox(data,dpo=dpo-1,int=as.logical(int),np=np,overlap=overlap,abs=abs)
+	for(kk in 1:np){
+		ps<-pb$perscale[[kk]]; Tsk<-ps$Ts
+		Om<-crossprod(ps$scores)/Tsk
+		if(Tsk>(nc-1)) Om<-Om*Tsk/(Tsk-(nc-1))      # HC1 finite-sample correction
+		Vh<-(ps$Fxx_inv%*%Om%*%ps$Fxx_inv)/Tsk
+		vn[1,,kk]<-diag(Vh)
+	}
+}
 for(k in 1:np){
 	for(i in 1:(nc-1)){
 	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=(size/sn[[k]])-nc)*sqrt(vn[1,i,k])
@@ -345,6 +362,68 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
                           kappa = as.vector(fit$kappa),
                           R2adj = as.vector(fit$R2adj))
   tibble::as_tibble(out)
+}
+
+# Internal: per-box detrended (co)variance scores for the fractal regression.
+# Shared core for vcov = "HC" and fracreg.WB(). For each scale it returns the box
+# size, the number of boxes Ts, the inverse F_XX(s)^-1, the coefficient vector
+# beta_hat, and the Ts x k matrix of per-box moment scores whose v-th row is
+# r_v' = s_xy(s,v) - (S_xx(s,v) beta_hat)'. Uses the rdfa_box/rdcca_box C
+# primitives (one detrending pass, exposed per box).
+.fracreg_perbox <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs = FALSE) {
+  data <- as.matrix(data)
+  n <- nrow(data); nc <- ncol(data); k <- nc - 1L
+  NFIT <- as.numeric(dpo + 1); iflag <- if (isTRUE(int)) 1 else 0
+  sw <- as.numeric(overlap); mx <- round(n / 5); absf <- as.numeric(abs)
+
+  rdfaB <- function(z) {
+    cfg <- as.integer(cbind(n, NFIT, iflag, np, sw, 10, mx))
+    a <- .C("rdfa_box", cfg, as.numeric(z), as.integer(numeric(np + 1)),
+            numeric(np + 1), numeric(np * n), PACKAGE = "DFAmethods2")
+    list(s = a[[3]][2:(np + 1)], box = matrix(a[[5]], nrow = n))
+  }
+  rdccaB <- function(z1, z2) {
+    cfg <- as.integer(cbind(n, NFIT, iflag, np, sw, 10, mx, absf))
+    a <- .C("rdcca_box", cfg, as.numeric(z1), as.numeric(z2),
+            as.integer(numeric(np + 1)), numeric(np + 1), numeric(np * n),
+            PACKAGE = "DFAmethods2")
+    matrix(a[[6]], nrow = n)
+  }
+
+  s <- NULL
+  diagBox <- vector("list", k)
+  for (j in seq_len(k)) { r <- rdfaB(data[, j + 1]); diagBox[[j]] <- r$box; s <- r$s }
+  xyBox <- lapply(seq_len(k), function(j) rdccaB(data[, 1], data[, j + 1]))
+  pkey <- function(i, l) paste(i, l, sep = "-")
+  offBox <- list()
+  if (k >= 2) for (i in 1:(k - 1)) for (l in (i + 1):k)
+    offBox[[pkey(i, l)]] <- rdccaB(data[, i + 1], data[, l + 1])
+
+  Ts <- if (overlap) n - s + 1 else floor(n / s)
+
+  perscale <- vector("list", np)
+  for (ki in seq_len(np)) {
+    Tsi <- Ts[ki]; vv <- seq_len(Tsi)
+    diag_v <- matrix(vapply(seq_len(k), function(j) diagBox[[j]][vv, ki], numeric(Tsi)),
+                     nrow = Tsi, ncol = k)
+    xy_v   <- matrix(vapply(seq_len(k), function(j) xyBox[[j]][vv, ki], numeric(Tsi)),
+                     nrow = Tsi, ncol = k)
+    Fxx <- matrix(0, k, k); diag(Fxx) <- colMeans(diag_v)
+    if (k >= 2) for (i in 1:(k - 1)) for (l in (i + 1):k) {
+      cv <- mean(offBox[[pkey(i, l)]][vv, ki]); Fxx[i, l] <- cv; Fxx[l, i] <- cv
+    }
+    Fxx_inv <- solve(Fxx)
+    beta <- as.vector(Fxx_inv %*% colMeans(xy_v))
+    Sbeta <- sweep(diag_v, 2, beta, `*`)               # diagonal part of S_xx(v) beta
+    if (k >= 2) for (i in 1:(k - 1)) for (l in (i + 1):k) {
+      cvv <- offBox[[pkey(i, l)]][vv, ki]
+      Sbeta[, i] <- Sbeta[, i] + cvv * beta[l]
+      Sbeta[, l] <- Sbeta[, l] + cvv * beta[i]
+    }
+    perscale[[ki]] <- list(s = s[ki], Ts = Tsi, Fxx_inv = Fxx_inv,
+                           beta = beta, scores = xy_v - Sbeta)   # Ts x k
+  }
+  list(np = np, k = k, n = n, scales = s, perscale = perscale)
 }
 
 #' Detrended Fluctuation Analysis

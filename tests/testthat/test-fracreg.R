@@ -35,6 +35,21 @@ test_that("fracreg.diag returns scale-wise diagnostics", {
   expect_equal(nrow(dg), 15)
 })
 
+test_that("vcov='HC' runs and changes only the variance", {
+  set.seed(5)
+  n  <- 500
+  x1 <- cumsum(rnorm(n)); x2 <- cumsum(rnorm(n))
+  y  <- x1 - 0.5 * x2 + cumsum(rnorm(n))
+  fi <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 12,
+                overlap = FALSE, vcov = "inverse")
+  fh <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 12,
+                overlap = FALSE, vcov = "HC")
+  expect_equal(fh$BDFA, fi$BDFA)                      # HC leaves the coefficients unchanged
+  expect_true(all(is.finite(fh$VDFA)))
+  expect_true(all(fh$VDFA >= 0))
+  expect_false(isTRUE(all.equal(fh$VDFA, fi$VDFA)))   # but the variance differs
+})
+
 test_that("fracreg validates vcov and abs", {
   set.seed(4)
   d <- cbind(cumsum(rnorm(300)), cumsum(rnorm(300)))

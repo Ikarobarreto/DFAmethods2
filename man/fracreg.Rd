@@ -10,7 +10,7 @@ fracreg(
   int,
   np = 91,
   overlap = TRUE,
-  vcov = c("inverse", "marginal"),
+  vcov = c("inverse", "marginal", "HC"),
   abs = FALSE
 )
 }
@@ -27,8 +27,11 @@ response and the remaining columns are the predictors.}
 \item{overlap}{logical. If TRUE overlapping windows are applied.}
 
 \item{vcov}{coefficient-variance estimator: \code{"inverse"} (default; full
-\eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022) or \code{"marginal"} (legacy
-\eqn{1/F^2_{X_j}(s)}, Shen 2015).}
+\eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022), \code{"marginal"} (legacy
+\eqn{1/F^2_{X_j}(s)}, Shen 2015), or \code{"HC"} (experimental
+heteroscedasticity-consistent sandwich built from the per-box detrended
+moment scores; \code{overlap = FALSE} is recommended and the finite-sample
+normalisation is still being calibrated).}
 
 \item{abs}{logical. If TRUE the absolute detrended covariance is used in the
 cross-correlation step (more robust to outliers).}
