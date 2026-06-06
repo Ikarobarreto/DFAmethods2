@@ -11,6 +11,16 @@
   the previous behaviour. This changes the confidence limits (`UCIB`, `LCIB`),
   `p.value` and `TC` when the predictors are correlated.
 
+## Bug fixes
+
+* Fixed a numerical bug in the residual detrended fluctuation (`UDFA`) and hence
+  in `R2DFA` and `VDFA2`: `polyfit()`'s incremental `covar0` cache key
+  (`pboxsize`) was `static` and persisted across the per-scale `setup()` calls,
+  which reallocate `covar0` without re-zeroing it, so the residual DFA in
+  `fracreg()` accumulated onto uninitialised memory and returned nonsensical
+  (even negative) values. `pboxsize` is now reset by `setup()`/`setup_dcca()`.
+  The main confidence intervals were not affected (they use F2_eps = F2_Y(1-DMC)).
+
 ## New features
 
 * `fracreg()` gains a `vcov = c("inverse", "marginal")` argument (default

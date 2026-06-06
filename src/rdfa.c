@@ -83,6 +83,7 @@ void run_dfa(double *seq, int npts)
 
 
 double **x;	/* matrix of abscissas and their powers, for polyfit(). */
+long pboxsize = 0L;	/* polyfit() covar0 cache key; reset by setup()/setup_dcca() */
 
 /* Detrended fluctuation analysis
     seq:	input data array
@@ -133,6 +134,7 @@ void setup()
 	for (j = 3; j <= nfit; j++)
 	    x[i][j] = x[i][j-1] * i;
     }
+    pboxsize = 0L;	/* covar0 was just (re)allocated: force polyfit to re-zero it */
 }
 
 /* This function frees all memory previously allocated by this program. */
@@ -161,7 +163,6 @@ double polyfit(double **x, double *y, double *res, long boxsize, int nfit)
     int icol = 0, irow = 0, j, k;
     double big, chisq, pivinv, temp;
     long i;
-    static long pboxsize = 0L;
 
     /* This block sets up the covariance matrix.  Provided that boxsize
        never decreases (which is true in this case), covar0 can be calculated
@@ -419,6 +420,7 @@ void setup_dcca(int npts)
 	    x2[i][j] = x2[i][j-1] * i;
 		}
     }
+    pboxsize = 0L;	/* covar0 was just (re)allocated: force polyfit to re-zero it */
 }
 
 /* This function frees all memory previously allocated by this program. */
