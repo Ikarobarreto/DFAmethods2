@@ -84,5 +84,5 @@ E}, 91(2), 022802.
 }
 \seealso{
 \code{\link{fracreg.diag}}, \code{\link{betadfa}},
-\code{\link{effsizeDFA}}, \code{vignette("DFAmethods2")}
+\code{\link{effsizeDFA}}, \code{vignette("DFATools")}
 }

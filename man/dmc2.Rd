@@ -38,5 +38,5 @@ cross-correlation coefficient. \emph{Communications in Nonlinear Science and
 Numerical Simulation}, 99, 105781.
 }
 \seealso{
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

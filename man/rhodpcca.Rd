@@ -35,5 +35,5 @@ method for analyzing correlations in complex system. \emph{Scientific
 Reports}, 5, 8143.
 }
 \seealso{
-\code{\link{rhodcca}}, \code{vignette("DFAmethods2")}
+\code{\link{rhodcca}}, \code{vignette("DFATools")}
 }

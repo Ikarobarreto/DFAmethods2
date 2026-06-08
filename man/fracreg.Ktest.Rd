@@ -39,5 +39,5 @@ E}, 91(2), 022802.
 }
 \seealso{
 \code{\link{fracreg.PStest}}, \code{\link{fracreg.IUTest}},
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

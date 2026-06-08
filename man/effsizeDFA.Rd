@@ -38,5 +38,5 @@ Cohen, J. (1988). \emph{Statistical Power Analysis for the Behavioral
 Sciences}, 2nd ed. Lawrence Erlbaum Associates.
 }
 \seealso{
-\code{\link{fracreg}}, \code{vignette("DFAmethods2")}
+\code{\link{fracreg}}, \code{vignette("DFATools")}
 }

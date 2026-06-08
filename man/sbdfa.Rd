@@ -39,5 +39,5 @@ framework: estimating dependence at different scales. \emph{Physical Review
 E}, 91(2), 022802.
 }
 \seealso{
-\code{\link{betadfa}}, \code{vignette("DFAmethods2")}
+\code{\link{betadfa}}, \code{vignette("DFATools")}
 }

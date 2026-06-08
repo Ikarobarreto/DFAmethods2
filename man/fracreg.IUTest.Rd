@@ -39,5 +39,5 @@ acoustic impedance models. \emph{Physica A}, 582, 126259.
 }
 \seealso{
 \code{\link{fracreg.PStest}}, \code{\link{fracreg.Ktest}},
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

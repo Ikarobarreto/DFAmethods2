@@ -13,12 +13,12 @@ knitr::opts_chunk$set(
 )
 ```
 
-# DFAmethods2
+# DFATools
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-**DFAmethods2** is a toolbox of Detrended Fluctuation Analysis (DFA) methods for
+**DFATools** is a toolbox of Detrended Fluctuation Analysis (DFA) methods for
 measuring long-range correlations, cross-correlations and regression in
 **nonstationary** time series, where classical autocorrelation and ordinary
 regression are biased by trends. It provides:
@@ -39,7 +39,7 @@ the intersection-union test follow Barreto et al. (2021)
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("Ikarobarreto/DFAmethods2")
+devtools::install_github("Ikarobarreto/DFATools")
 ```
 
 ## Example
@@ -47,7 +47,7 @@ devtools::install_github("Ikarobarreto/DFAmethods2")
 A response `y` driven by a covariate `x2`, both random-walk-like:
 
 ```{r example}
-library(DFAmethods2)
+library(DFATools)
 
 set.seed(1)
 x2  <- cumsum(rnorm(800))
@@ -61,4 +61,4 @@ head(dfa(y, np = 30))
 head(rhodcca(dat, np = 30))
 ```
 
-See `vignette("DFAmethods2")` for the full theory and worked examples.
+See `vignette("DFATools")` for the full theory and worked examples.

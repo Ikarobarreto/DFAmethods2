@@ -37,5 +37,5 @@ Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
 of cross-correlation. \emph{Physica A}, 390(4), 614-618.
 }
 \seealso{
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

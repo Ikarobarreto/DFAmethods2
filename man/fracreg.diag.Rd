@@ -44,5 +44,5 @@ Heterogeneity in economic relationships: scale dependence through the
 multivariate fractal regression. \emph{Physica A}, 588, 126530.
 }
 \seealso{
-\code{\link{fracreg}}, \code{vignette("DFAmethods2")}
+\code{\link{fracreg}}, \code{vignette("DFATools")}
 }

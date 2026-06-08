@@ -33,5 +33,5 @@ Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
 \emph{Physical Review E}, 49(2), 1685-1689.
 }
 \seealso{
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

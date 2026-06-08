@@ -1,8 +1,8 @@
-#' DFAmethods2: detrended fluctuation analysis and related methods
+#' DFATools: detrended fluctuation analysis and related methods
 #'
 #' A toolbox of Detrended Fluctuation Analysis ('DFA') methods for long-range
 #' correlations, cross-correlations and regression in nonstationary time series.
-#' See \code{vignette("DFAmethods2")} for the theory and worked examples.
+#' See \code{vignette("DFATools")} for the theory and worked examples.
 #'
 #' @section Function groups:
 #' \describe{
@@ -146,7 +146,7 @@ utils::globalVariables(c("s", "rho"))
 #' framework: estimating dependence at different scales. \emph{Physical Review
 #' E}, 91(2), 022802.
 #' @seealso \code{\link{fracreg.diag}}, \code{\link{betadfa}},
-#' \code{\link{effsizeDFA}}, \code{vignette("DFAmethods2")}
+#' \code{\link{effsizeDFA}}, \code{vignette("DFATools")}
 #' @export
 #' @importFrom stats pt
 #' @importFrom stats qt
@@ -163,7 +163,7 @@ utils::globalVariables(c("s", "rho"))
 #' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
 #'                 x2 = cumsum(rnorm(300)))
 #' fracreg(d, dpo = 1, int = TRUE, np = 20)
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @useDynLib DFATools, .registration=TRUE
 
 fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal","HC"),abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
@@ -210,7 +210,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn[i,i,]<-ans1[[4]][1:NR+1]
 }
@@ -231,7 +231,7 @@ ABSFLAG	<- as.numeric(abs)		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
-ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
 fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
 fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 }
@@ -259,7 +259,7 @@ MAXBOX	<- sn[[k]]		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(u), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(u), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 un[1,1,k]<-ans1[[4]][2]
 dmc2[k]<-pn[1,(2:nc),k]%*%solve(pn[(2:nc),(2:nc),k])%*%pn[(2:nc),1,k]
 bs[,,k]<-solve(pn[(2:nc),(2:nc),k])%*%pn[(2:nc),1,k]
@@ -342,7 +342,7 @@ return(fracreg)
 #' Tilfani, O., Kristoufek, L., Ferreira, P. and El Boukfaoui, M. Y. (2022).
 #' Heterogeneity in economic relationships: scale dependence through the
 #' multivariate fractal regression. \emph{Physica A}, 588, 126530.
-#' @seealso \code{\link{fracreg}}, \code{vignette("DFAmethods2")}
+#' @seealso \code{\link{fracreg}}, \code{vignette("DFATools")}
 #' @importFrom tibble as_tibble
 #' @examples
 #' set.seed(1)
@@ -379,14 +379,14 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
   rdfaB <- function(z) {
     cfg <- as.integer(cbind(n, NFIT, iflag, np, sw, 10, mx))
     a <- .C("rdfa_box", cfg, as.numeric(z), as.integer(numeric(np + 1)),
-            numeric(np + 1), numeric(np * n), PACKAGE = "DFAmethods2")
+            numeric(np + 1), numeric(np * n), PACKAGE = "DFATools")
     list(s = a[[3]][2:(np + 1)], box = matrix(a[[5]], nrow = n))
   }
   rdccaB <- function(z1, z2) {
     cfg <- as.integer(cbind(n, NFIT, iflag, np, sw, 10, mx, absf))
     a <- .C("rdcca_box", cfg, as.numeric(z1), as.numeric(z2),
             as.integer(numeric(np + 1)), numeric(np + 1), numeric(np * n),
-            PACKAGE = "DFAmethods2")
+            PACKAGE = "DFATools")
     matrix(a[[6]], nrow = n)
   }
 
@@ -487,7 +487,7 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
 #' Heterogeneity in economic relationships: scale dependence through the
 #' multivariate fractal regression. \emph{Physica A}, 588, 126530.
 #' @seealso \code{\link{fracreg}}, \code{\link{fracreg.IUTest}},
-#' \code{vignette("DFAmethods2")}
+#' \code{vignette("DFATools")}
 #' @importFrom stats quantile rnorm runif
 #' @examples
 #' set.seed(1)
@@ -545,8 +545,8 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
 #' @references
 #' Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
 #' \emph{Physical Review E}, 49(2), 1685-1689.
-#' @seealso \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @seealso \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' x <- cumsum(rnorm(300))
@@ -577,7 +577,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn<-ans1[[4]][1:NR+1]
 DFA<-tibble::as_tibble(cbind.data.frame(sn,fn))
@@ -600,10 +600,10 @@ return(DFA)
 #'
 #' Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
 #' of cross-correlation. \emph{Physica A}, 390(4), 614-618.
-#' @seealso \code{vignette("DFAmethods2")}
+#' @seealso \code{vignette("DFATools")}
 #' @importFrom tibble as_tibble
 #' @importFrom gdata upperTriangle
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)))
@@ -638,7 +638,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn[i,i,]<-ans1[[4]][1:NR+1]
 }
@@ -659,7 +659,7 @@ ABSFLAG	<- 0		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
-ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
 fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
 fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 }
@@ -687,8 +687,8 @@ return(rhodcca)
 #' Yuan, N. et al. (2015). Detrended partial-cross-correlation analysis: a new
 #' method for analyzing correlations in complex system. \emph{Scientific
 #' Reports}, 5, 8143.
-#' @seealso \code{\link{rhodcca}}, \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @seealso \code{\link{rhodcca}}, \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(x = cumsum(rnorm(300)), y = cumsum(rnorm(300)),
@@ -724,7 +724,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn[i,i,]<-ans1[[4]][1:NR+1]
 }
@@ -745,7 +745,7 @@ ABSFLAG	<- 0		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
-ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
 fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
 fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 }
@@ -777,8 +777,8 @@ for(i in 1:(np-1)){
 #' Wang, F., Xu, J. and Fan, Q. (2021). Statistical test for detrended multiple
 #' cross-correlation coefficient. \emph{Communications in Nonlinear Science and
 #' Numerical Simulation}, 99, 105781.
-#' @seealso \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @seealso \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
@@ -815,7 +815,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn[i,i,]<-ans1[[4]][1:NR+1]
 }
@@ -836,7 +836,7 @@ ABSFLAG	<- 0		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
-ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
 fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
 fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 }
@@ -868,8 +868,8 @@ return(DMC2)
 #'
 #' Cohen, J. (1988). \emph{Statistical Power Analysis for the Behavioral
 #' Sciences}, 2nd ed. Lawrence Erlbaum Associates.
-#' @seealso \code{\link{fracreg}}, \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @seealso \code{\link{fracreg}}, \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @importFrom dplyr inner_join
 #' @examples
 #' set.seed(1)
@@ -919,7 +919,7 @@ else{
 #' @param overlap logical. if TRUE overlapping windows will be applied.
 #' @return Scale s, Beta DFA estimates
 #' @keywords internal
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @useDynLib DFATools, .registration=TRUE
 
 bdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	data<-as.matrix(data)
@@ -948,7 +948,7 @@ MAXBOX	<- as.numeric(mx)		# maximum box size
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
-ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFAmethods2")
+ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
 fn[i,i,]<-ans1[[4]][1:NR+1]
 }
@@ -969,7 +969,7 @@ ABSFLAG	<- 0		# absolute flag for dcca
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
 rs12 <- numeric(NR+1)
 mse12 <- numeric(NR+1)
-ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
 fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
 fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
 }
@@ -996,8 +996,8 @@ return(bdfa)
 #' framework: estimating dependence at different scales. \emph{Physical Review
 #' E}, 91(2), 022802.
 #' @seealso \code{\link{sbdfa}}, \code{\link{fracreg}},
-#' \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
@@ -1035,7 +1035,7 @@ betadfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
     cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
     rsi1<- numeric(NR+1)
     msei1<- numeric(NR+1)
-    ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFAmethods2")
+    ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFATools")
     sn<- ans1[[3]][1:NR+1]
     fn[i,i,]<-ans1[[4]][1:NR+1]
   }
@@ -1056,7 +1056,7 @@ betadfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
     cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
     rs12 <- numeric(NR+1)
     mse12 <- numeric(NR+1)
-    ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+    ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
     fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
     fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
   }
@@ -1085,8 +1085,8 @@ betadfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 #' Kristoufek, L. (2015). Detrended fluctuation analysis as a regression
 #' framework: estimating dependence at different scales. \emph{Physical Review
 #' E}, 91(2), 022802.
-#' @seealso \code{\link{betadfa}}, \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' @seealso \code{\link{betadfa}}, \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
@@ -1125,7 +1125,7 @@ sbdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
     cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
     rsi1<- numeric(NR+1)
     msei1<- numeric(NR+1)
-    ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFAmethods2")
+    ans1<- .C("rdfa",cfg,as.numeric(seq1),as.integer(rsi1),as.numeric(msei1),PACKAGE = "DFATools")
     sn<- ans1[[3]][1:NR+1]
     fn[i,i,]<-ans1[[4]][1:NR+1]
   }
@@ -1146,7 +1146,7 @@ sbdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
     cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX,ABSFLAG))
     rs12 <- numeric(NR+1)
     mse12 <- numeric(NR+1)
-    ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFAmethods2")
+    ans12 <- .C("rdcca", cfg, as.numeric(seq1), as.numeric(seq2), as.integer(rs12), as.numeric(mse12),PACKAGE = "DFATools")
     fn[pairs[i,1],pairs[i,2],] <- ans12[[5]][1:NR+1]
     fn[pairs[i,2],pairs[i,1],] <- ans12[[5]][1:NR+1]
   }
@@ -1180,8 +1180,8 @@ sbdfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 #' framework: estimating dependence at different scales. \emph{Physical Review
 #' E}, 91(2), 022802.
 #' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.IUTest}},
-#' \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
@@ -1260,8 +1260,8 @@ return(cib)
 #' Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
 #' \emph{Physics Letters A}, 379(44), 2962-2969.
 #' @seealso \code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}},
-#' \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))
@@ -1319,8 +1319,8 @@ return(cib)
 #' Extending DFA-based multiple linear regression inference: application to
 #' acoustic impedance models. \emph{Physica A}, 582, 126259.
 #' @seealso \code{\link{fracreg.PStest}}, \code{\link{fracreg.Ktest}},
-#' \code{vignette("DFAmethods2")}
-#' @useDynLib DFAmethods2, .registration=TRUE
+#' \code{vignette("DFATools")}
+#' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = cumsum(rnorm(250)), x = cumsum(rnorm(250)))

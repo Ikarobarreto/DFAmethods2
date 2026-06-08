@@ -1,13 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# DFAmethods2
+# DFATools
 
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-**DFAmethods2** is a toolbox of Detrended Fluctuation Analysis (DFA)
+**DFATools** is a toolbox of Detrended Fluctuation Analysis (DFA)
 methods for measuring long-range correlations, cross-correlations and
 regression in **nonstationary** time series, where classical
 autocorrelation and ordinary regression are biased by trends. It
@@ -33,7 +33,7 @@ size and the intersection-union test follow Barreto et al. (2021)
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("Ikarobarreto/DFAmethods2")
+devtools::install_github("Ikarobarreto/DFATools")
 ```
 
 ## Example
@@ -41,7 +41,7 @@ devtools::install_github("Ikarobarreto/DFAmethods2")
 A response `y` driven by a covariate `x2`, both random-walk-like:
 
 ``` r
-library(DFAmethods2)
+library(DFATools)
 #> Registered S3 method overwritten by 'quantmod':
 #>   method            from
 #>   as.zoo.data.frame zoo
@@ -76,4 +76,4 @@ head(rhodcca(dat, np = 30))
 #> 6    15  0.426
 ```
 
-See `vignette("DFAmethods2")` for the full theory and worked examples.
+See `vignette("DFATools")` for the full theory and worked examples.

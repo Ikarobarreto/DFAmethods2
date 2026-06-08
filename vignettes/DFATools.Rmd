@@ -27,7 +27,7 @@ set.seed(42)
 Detrended Fluctuation Analysis (DFA) and its relatives are a family of methods
 for measuring long-range correlations and cross-correlations in **nonstationary**
 time series, where classical autocorrelation and ordinary regression are biased
-by trends. `DFAmethods2` collects the most useful members of this family under a
+by trends. `DFATools` collects the most useful members of this family under a
 common, consistent interface:
 
 | Concern | Function(s) |
@@ -46,7 +46,7 @@ test** — were introduced by @barreto2021, whose framework this package
 implements.
 
 ```{r setup}
-library(DFAmethods2)
+library(DFATools)
 ```
 
 ### Data convention and common arguments
@@ -211,7 +211,7 @@ head(ef)
 
 ## Significance tests
 
-`DFAmethods2` ships surrogate-based tests for the scale-wise coefficients, built
+`DFATools` ships surrogate-based tests for the scale-wise coefficients, built
 on phase-randomised surrogates of the series:
 
 * `fracreg.PStest()` — Podobnik–Shen test of $H_0\!: \beta(s) = 0$ (no

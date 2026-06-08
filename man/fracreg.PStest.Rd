@@ -42,5 +42,5 @@ Shen, C. (2015). A new detrended semipartial cross-correlation analysis.
 }
 \seealso{
 \code{\link{fracreg.Ktest}}, \code{\link{fracreg.IUTest}},
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

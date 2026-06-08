@@ -36,5 +36,5 @@ E}, 91(2), 022802.
 }
 \seealso{
 \code{\link{sbdfa}}, \code{\link{fracreg}},
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

@@ -81,5 +81,5 @@ multivariate fractal regression. \emph{Physica A}, 588, 126530.
 }
 \seealso{
 \code{\link{fracreg}}, \code{\link{fracreg.IUTest}},
-\code{vignette("DFAmethods2")}
+\code{vignette("DFATools")}
 }

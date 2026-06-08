@@ -1,7 +1,7 @@
-Package: DFAmethods2
+Package: DFATools
 Type: Package
 Title: Detrended Fluctuation Analysis and Related Methods
-Version: 0.1.4
+Version: 1.0.0
 Authors@R: c(
     person(given = "Ikaro Daniel de Carvalho",
            family = "Barreto",
@@ -37,6 +37,6 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://github.com/Ikarobarreto/DFAmethods2
-BugReports: https://github.com/Ikarobarreto/DFAmethods2/issues
+URL: https://github.com/Ikarobarreto/DFATools
+BugReports: https://github.com/Ikarobarreto/DFATools/issues
 Config/testthat/edition: 3

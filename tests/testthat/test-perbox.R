@@ -10,7 +10,7 @@ test_that("rdfa_box / rdcca_box per-box values average to F^2(s)", {
 
   cfg <- as.integer(cbind(n, 2, 1, np, 1, 10, mx))   # NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX
   a <- .C("rdfa_box", cfg, as.numeric(x), as.integer(numeric(np + 1)),
-          numeric(np + 1), numeric(np * n), PACKAGE = "DFAmethods2")
+          numeric(np + 1), numeric(np * n), PACKAGE = "DFATools")
   s  <- a[[3]][2:(np + 1)]
   f2 <- a[[4]][2:(np + 1)]
   box <- matrix(a[[5]], nrow = n)                     # column i = scale i, rows = boxes
@@ -22,7 +22,7 @@ test_that("rdfa_box / rdcca_box per-box values average to F^2(s)", {
   cfgc <- as.integer(cbind(n, 2, 1, np, 1, 10, mx, 0))   # + ABSFLAG
   ac <- .C("rdcca_box", cfgc, as.numeric(x), as.numeric(y),
            as.integer(numeric(np + 1)), numeric(np + 1), numeric(np * n),
-           PACKAGE = "DFAmethods2")
+           PACKAGE = "DFATools")
   sc  <- ac[[4]][2:(np + 1)]
   f2c <- ac[[5]][2:(np + 1)]
   boxc <- matrix(ac[[6]], nrow = n)

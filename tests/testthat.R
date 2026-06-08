@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(DFAmethods2)
+library(DFATools)
 
-test_check("DFAmethods2")
+test_check("DFATools")
