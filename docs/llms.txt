@@ -1,32 +1,32 @@
-# DFAmethods2
+# DFATools
 
-**DFAmethods2** is a toolbox of Detrended Fluctuation Analysis (DFA)
+**DFATools** is a toolbox of Detrended Fluctuation Analysis (DFA)
 methods for measuring long-range correlations, cross-correlations and
 regression in **nonstationary** time series, where classical
 autocorrelation and ordinary regression are biased by trends. It
 provides:
 
 - **Detrended Fluctuation Analysis** —
-  [`dfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/dfa.md)
+  [`dfa()`](https://ikarobarreto.github.io/DFATools/reference/dfa.md)
 - **Detrended Cross-Correlation Analysis** and the **rho-DCCA**
   coefficient —
-  [`rhodcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodcca.md)
+  [`rhodcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodcca.md)
 - **Detrended Partial Cross-Correlation** coefficient —
-  [`rhodpcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodpcca.md)
+  [`rhodpcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodpcca.md)
 - **Detrended Multiple Cross-Correlation** coefficient (DMC) —
-  [`dmc2()`](https://ikarobarreto.github.io/DFAmethods2/reference/dmc2.md)
+  [`dmc2()`](https://ikarobarreto.github.io/DFATools/reference/dmc2.md)
 - **Detrended fractal regression**: scale-wise and standardized
   coefficients —
-  [`betadfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/betadfa.md),
-  [`sbdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/sbdfa.md),
-  [`fracreg()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.md)
+  [`betadfa()`](https://ikarobarreto.github.io/DFATools/reference/betadfa.md),
+  [`sbdfa()`](https://ikarobarreto.github.io/DFATools/reference/sbdfa.md),
+  [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
 - **Scale-wise** $`f^2`$**effect sizes** —
-  [`effsizeDFA()`](https://ikarobarreto.github.io/DFAmethods2/reference/effsizeDFA.md)
+  [`effsizeDFA()`](https://ikarobarreto.github.io/DFATools/reference/effsizeDFA.md)
 - **Significance tests**: Podobnik-Shen, Kristoufek and
   intersection-union —
-  [`fracreg.PStest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.PStest.md),
-  [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.Ktest.md),
-  [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.IUTest.md)
+  [`fracreg.PStest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.PStest.md),
+  [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.Ktest.md),
+  [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.IUTest.md)
 
 The scale-dependent standardized coefficients, the scale-wise effect
 size and the intersection-union test follow Barreto et al. (2021)
@@ -36,7 +36,7 @@ size and the intersection-union test follow Barreto et al. (2021)
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("Ikarobarreto/DFAmethods2")
+devtools::install_github("Ikarobarreto/DFATools")
 ```
 
 ## Example
@@ -44,7 +44,7 @@ devtools::install_github("Ikarobarreto/DFAmethods2")
 A response `y` driven by a covariate `x2`, both random-walk-like:
 
 ``` r
-library(DFAmethods2)
+library(DFATools)
 #> Registered S3 method overwritten by 'quantmod':
 #>   method            from
 #>   as.zoo.data.frame zoo
@@ -80,7 +80,7 @@ head(rhodcca(dat, np = 30))
 ```
 
 See
-[`vignette("DFAmethods2")`](https://ikarobarreto.github.io/DFAmethods2/articles/DFAmethods2.md)
+[`vignette("DFATools")`](https://ikarobarreto.github.io/DFATools/articles/DFATools.md)
 for the full theory and worked examples.
 
 # Package index
@@ -89,48 +89,58 @@ for the full theory and worked examples.
 
 Detrended fluctuation analysis of one series.
 
-- [`dfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/dfa.md)
-  : Detrended Fluctuation Analysis
-- [`plotdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotdfa.md)
+- [`dfa()`](https://ikarobarreto.github.io/DFATools/reference/dfa.md) :
+  Detrended Fluctuation Analysis
+- [`plotdfa()`](https://ikarobarreto.github.io/DFATools/reference/plotdfa.md)
   : Plot DFA
 
 ## Cross-correlation
 
 Detrended cross-, partial- and multiple-correlation coefficients.
 
-- [`rhodcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodcca.md)
+- [`rhodcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodcca.md)
   : rho Detrended Cross-Correlation Coefficient
-- [`rhodpcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodpcca.md)
+- [`rhodpcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodpcca.md)
   : rho Detrended Partial Cross-Correlation Coefficient
-- [`dmc2()`](https://ikarobarreto.github.io/DFAmethods2/reference/dmc2.md)
+- [`dmc2()`](https://ikarobarreto.github.io/DFATools/reference/dmc2.md)
   : rho Detrended Multiple-Correlation Coefficient
-- [`plotrdcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotrdcca.md)
+- [`plotrdcca()`](https://ikarobarreto.github.io/DFATools/reference/plotrdcca.md)
   : Plot rho-DCCA
-- [`plotdcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotdcca.md)
+- [`plotdcca()`](https://ikarobarreto.github.io/DFATools/reference/plotdcca.md)
   : Plot DCCA
 
 ## Detrended fractal regression
 
 Scale-wise regression coefficients and effect sizes.
 
-- [`betadfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/betadfa.md)
+- [`betadfa()`](https://ikarobarreto.github.io/DFATools/reference/betadfa.md)
   : Beta DFA
-- [`sbdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/sbdfa.md)
+- [`sbdfa()`](https://ikarobarreto.github.io/DFATools/reference/sbdfa.md)
   : Standardized Beta DFA
-- [`fracreg()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.md)
+- [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
   : Multiple Fractal Regression
-- [`effsizeDFA()`](https://ikarobarreto.github.io/DFAmethods2/reference/effsizeDFA.md)
+- [`effsizeDFA()`](https://ikarobarreto.github.io/DFATools/reference/effsizeDFA.md)
   : f² scale-wise effect sizes
+
+## Coefficient inference and diagnostics
+
+Robust standard errors, wild-bootstrap confidence intervals and
+collinearity diagnostics for the scale-wise coefficients.
+
+- [`fracreg.diag()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.diag.md)
+  : Scale-wise collinearity diagnostics for the fractal regression
+- [`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md)
+  : Wild bootstrap inference for the fractal regression
 
 ## Significance tests
 
 Surrogate-based tests for the scale-wise coefficients.
 
-- [`fracreg.PStest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.PStest.md)
+- [`fracreg.PStest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.PStest.md)
   : Podobnik-Shen Test
-- [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.Ktest.md)
+- [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.Ktest.md)
   : Kristoufek Test
-- [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.IUTest.md)
+- [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.IUTest.md)
   : Intersection-Union Test
 
 # Articles
@@ -138,4 +148,4 @@ Surrogate-based tests for the scale-wise coefficients.
 ### All vignettes
 
 - [Detrended fluctuation analysis and related
-  methods](https://ikarobarreto.github.io/DFAmethods2/articles/DFAmethods2.md):
+  methods](https://ikarobarreto.github.io/DFATools/articles/DFATools.md):

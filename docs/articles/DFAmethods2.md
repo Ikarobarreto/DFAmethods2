@@ -10,13 +10,13 @@ most useful members of this family under a common, consistent interface:
 
 | Concern | Function(s) |
 |----|----|
-| Scaling of a single series | [`dfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/dfa.md), [`plotdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotdfa.md) |
-| Cross-correlation of two series | [`rhodcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodcca.md), [`plotrdcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotrdcca.md) |
-| Partial cross-correlation | [`rhodpcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodpcca.md) |
-| Multiple cross-correlation | [`dmc2()`](https://ikarobarreto.github.io/DFAmethods2/reference/dmc2.md) |
-| Regression at each scale | [`betadfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/betadfa.md), [`sbdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/sbdfa.md), [`fracreg()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.md) |
-| Scale-wise effect sizes | [`effsizeDFA()`](https://ikarobarreto.github.io/DFAmethods2/reference/effsizeDFA.md) |
-| Significance tests | [`fracreg.PStest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.PStest.md), [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.Ktest.md), [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.IUTest.md) |
+| Scaling of a single series | [`dfa()`](https://ikarobarreto.github.io/DFATools/reference/dfa.md), [`plotdfa()`](https://ikarobarreto.github.io/DFATools/reference/plotdfa.md) |
+| Cross-correlation of two series | [`rhodcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodcca.md), [`plotrdcca()`](https://ikarobarreto.github.io/DFATools/reference/plotrdcca.md) |
+| Partial cross-correlation | [`rhodpcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodpcca.md) |
+| Multiple cross-correlation | [`dmc2()`](https://ikarobarreto.github.io/DFATools/reference/dmc2.md) |
+| Regression at each scale | [`betadfa()`](https://ikarobarreto.github.io/DFATools/reference/betadfa.md), [`sbdfa()`](https://ikarobarreto.github.io/DFATools/reference/sbdfa.md), [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md) |
+| Scale-wise effect sizes | [`effsizeDFA()`](https://ikarobarreto.github.io/DFATools/reference/effsizeDFA.md) |
+| Significance tests | [`fracreg.PStest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.PStest.md), [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.Ktest.md), [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.IUTest.md) |
 
 Several of the regression-oriented tools — the scale-dependent
 **standardized** coefficients, the scale-wise $`f^2`$**effect size** and
@@ -30,7 +30,7 @@ library(DFAmethods2)
 ### Data convention and common arguments
 
 Except for
-[`dfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/dfa.md)
+[`dfa()`](https://ikarobarreto.github.io/DFATools/reference/dfa.md)
 (which takes a single numeric vector), the functions expect a **matrix
 or data frame whose first column is the response** $`Y`$ and whose
 remaining columns are the covariates $`X_2, \dots, X_p`$. They share
@@ -92,7 +92,7 @@ round(alpha, 3)
 #> [1] 3.014
 ```
 
-[`plotdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/plotdfa.md)
+[`plotdfa()`](https://ikarobarreto.github.io/DFATools/reference/plotdfa.md)
 draws the log–log fluctuation plot with the fitted exponent:
 
 ``` r
@@ -115,7 +115,7 @@ $`F_{XY}^2(s)`$ is unbounded, so Zebende (2011) normalised it into the
 ```
 a scale-by-scale analogue of Pearson’s correlation that is robust to
 trends.
-[`rhodcca()`](https://ikarobarreto.github.io/DFAmethods2/reference/rhodcca.md)
+[`rhodcca()`](https://ikarobarreto.github.io/DFATools/reference/rhodcca.md)
 returns one column per pair of series:
 
 ``` r
@@ -203,9 +203,9 @@ an unstandardised effect of each covariate on the response **at scale
 $`s`$** that, unlike OLS, can vary across scales. The multivariate case
 ($`p \ge 2`$ covariates, detrended multiple linear regression) is due to
 Shen (2015).
-[`betadfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/betadfa.md)
+[`betadfa()`](https://ikarobarreto.github.io/DFATools/reference/betadfa.md)
 returns these coefficients and
-[`sbdfa()`](https://ikarobarreto.github.io/DFAmethods2/reference/sbdfa.md)
+[`sbdfa()`](https://ikarobarreto.github.io/DFATools/reference/sbdfa.md)
 their **standardised** counterparts (computed from the
 $`\rho_{\mathrm{DCCA}}`$ matrices), which Barreto et al. (2021) proposed
 as a scale-wise measure of relative importance:
@@ -235,7 +235,7 @@ legend("right", c("x2", "x3"), col = 1:2, lty = 1, lwd = 2, bty = "n")
 The estimates hover around the true coefficients $`0.7`$ and $`-0.5`$ at
 every scale.
 
-[`fracreg()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.md)
+[`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
 is the all-in-one workhorse: a single call returns the scale vector,
 detrended (partial) correlations, raw and standardised $`\beta(s)`$, the
 coefficient of determination, the DMC, confidence limits and
@@ -251,7 +251,7 @@ names(fr)
 
 ### Scale-wise effect sizes
 
-[`effsizeDFA()`](https://ikarobarreto.github.io/DFAmethods2/reference/effsizeDFA.md)
+[`effsizeDFA()`](https://ikarobarreto.github.io/DFATools/reference/effsizeDFA.md)
 reports the scale-wise effect size introduced by Barreto et al. (2021) —
 Cohen’s $`f^2`$(Cohen 1988) evaluated at each scale,
 $`f^2 = (R^2_{\text{full}} - R^2_{\text{reduced}}) / (1 - R^2_{\text{full}})`$
@@ -276,14 +276,14 @@ head(ef)
 `DFAmethods2` ships surrogate-based tests for the scale-wise
 coefficients, built on phase-randomised surrogates of the series:
 
-- [`fracreg.PStest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.PStest.md)
+- [`fracreg.PStest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.PStest.md)
   — Podobnik–Shen test of $`H_0\!: \beta(s) = 0`$ (no detrended effect)
   (Podobnik et al. 2011; Shen 2015);
-- [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.Ktest.md)
+- [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.Ktest.md)
   — Kristoufek test of $`H_0\!: \beta_{\mathrm{DFA}}(s) =
   \beta_{\mathrm{OLS}}`$ (the scale effect equals the global OLS one)
   (Kristoufek 2015);
-- [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFAmethods2/reference/fracreg.IUTest.md)
+- [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.IUTest.md)
   — the intersection–union test of Barreto et al. (2021) (following the
   intersection–union principle, e.g. Van Deun et al. (2009)), which
   combines the two so as to reject only when a covariate has a direct,

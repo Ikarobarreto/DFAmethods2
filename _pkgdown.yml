@@ -24,6 +24,13 @@ reference:
   - sbdfa
   - fracreg
   - effsizeDFA
+- title: Coefficient inference and diagnostics
+  desc: >
+    Robust standard errors, wild-bootstrap confidence intervals and
+    collinearity diagnostics for the scale-wise coefficients.
+  contents:
+  - fracreg.diag
+  - fracreg.WB
 - title: Significance tests
   desc: Surrogate-based tests for the scale-wise coefficients.
   contents:

@@ -5,7 +5,7 @@ Plot of Detrended Fluctuation Analysis
 ## Usage
 
 ``` r
-plotdfa(dfa, seg = F, point = NULL, main)
+plotdfa(dfa, seg = FALSE, point = NULL, main = NULL)
 ```
 
 ## Arguments
@@ -29,3 +29,12 @@ plotdfa(dfa, seg = F, point = NULL, main)
 ## Value
 
 a plot of Detrended Fluctuation Analysis.
+
+## Examples
+
+``` r
+set.seed(1)
+x <- cumsum(rnorm(300))
+plotdfa(dfa(x, np = 20))
+#> `geom_smooth()` using formula = 'y ~ x'
+```

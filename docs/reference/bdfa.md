@@ -5,7 +5,7 @@ Calculates Beta DFA
 ## Usage
 
 ``` r
-bdfa(data, dpo = 1, int = T, np = 91, overlap = T)
+bdfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 ```
 
 ## Arguments

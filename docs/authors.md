@@ -9,16 +9,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Ikarobarreto/DFAmethods2/blob/HEAD/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Ikarobarreto/DFATools/blob/HEAD/DESCRIPTION)
 
-Barreto I, Dore L (2026). *DFAmethods2: Detrended Fluctuation Analysis
-and Related Methods*. R package version 0.1.0,
-<https://github.com/Ikarobarreto/DFAmethods2>.
+Barreto I, Dore L (2026). *DFATools: Detrended Fluctuation Analysis and
+Related Methods*. R package version 1.0.0,
+<https://github.com/Ikarobarreto/DFATools>.
 
     @Manual{,
-      title = {DFAmethods2: Detrended Fluctuation Analysis and Related Methods},
+      title = {DFATools: Detrended Fluctuation Analysis and Related Methods},
       author = {Ikaro Daniel de Carvalho Barreto and Luiz Henrique Dore},
       year = {2026},
-      note = {R package version 0.1.0},
-      url = {https://github.com/Ikarobarreto/DFAmethods2},
+      note = {R package version 1.0.0},
+      url = {https://github.com/Ikarobarreto/DFATools},
     }

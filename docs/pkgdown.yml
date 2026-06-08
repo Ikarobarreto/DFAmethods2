@@ -2,8 +2,8 @@ pandoc: 3.6.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  DFAmethods2: DFAmethods2.html
-last_built: 2026-05-30T13:15Z
+  DFATools: DFATools.html
+last_built: 2026-06-08T18:44Z
 urls:
-  reference: https://ikarobarreto.github.io/DFAmethods2/reference
-  article: https://ikarobarreto.github.io/DFAmethods2/articles
+  reference: https://ikarobarreto.github.io/DFATools/reference
+  article: https://ikarobarreto.github.io/DFATools/articles

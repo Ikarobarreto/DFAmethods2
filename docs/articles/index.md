@@ -3,4 +3,4 @@
 ### All vignettes
 
 - [Detrended fluctuation analysis and related
-  methods](https://ikarobarreto.github.io/DFAmethods2/articles/DFAmethods2.md):
+  methods](https://ikarobarreto.github.io/DFATools/articles/DFATools.md):
