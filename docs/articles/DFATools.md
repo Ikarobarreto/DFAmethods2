@@ -16,6 +16,7 @@ useful members of this family under a common, consistent interface:
 | Multiple cross-correlation | [`dmc2()`](https://ikarobarreto.github.io/DFATools/reference/dmc2.md) |
 | Regression at each scale | [`betadfa()`](https://ikarobarreto.github.io/DFATools/reference/betadfa.md), [`sbdfa()`](https://ikarobarreto.github.io/DFATools/reference/sbdfa.md), [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md) |
 | Scale-wise effect sizes | [`effsizeDFA()`](https://ikarobarreto.github.io/DFATools/reference/effsizeDFA.md) |
+| Coefficient inference, diagnostics & robust SEs | [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md), [`fracreg.diag()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.diag.md), [`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md) |
 | Significance tests | [`fracreg.PStest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.PStest.md), [`fracreg.Ktest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.Ktest.md), [`fracreg.IUTest()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.IUTest.md) |
 
 Several of the regression-oriented tools — the scale-dependent
@@ -271,6 +272,120 @@ head(ef)
 #> 6    15 0.107 0.0172 0.0414 0.100 0.0731
 ```
 
+## Inference: confidence intervals, diagnostics and robust standard errors
+
+The point estimates above are only half the story.
+[`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+also quantifies the **uncertainty** of every scale-wise coefficient: the
+returned arrays carry the variance (`VDFA`), the 95% confidence limits
+(`LCIB`, `UCIB`) and two-sided `p.value`s, alongside collinearity
+diagnostics. A coefficient is indexed as covariate $`j`$ at scale $`k`$
+— e.g. `fr$BDFA[j, 1, k]` and `fr$UCIB[j, 1, k]`.
+
+### The coefficient variance
+
+By default (`vcov = "inverse"`) the variance is built from the **full
+inverse** of the predictors’ detrended covariance matrix,
+``` math
+
+\operatorname{var}\!\big(\beta_j(s)\big)
+   = F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj},
+```
+the very matrix that produces $`\boldsymbol{\beta}(s)`$(Tilfani et al.
+2022). The legacy “marginal” variance
+$`F^2_{\varepsilon}(s)/F^2_{X_j}(s)`$ ignores the off-diagonal structure
+and **under-covers when the covariates are correlated**; the two agree
+only for orthogonal predictors. Pass `vcov = "marginal"` to recover it.
+
+``` r
+fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # vcov = "inverse" (default)
+b  <- fr$BDFA[1, 1, ]                               # x2 coefficient
+lo <- fr$LCIB[1, 1, ]; hi <- fr$UCIB[1, 1, ]
+plot(fr$s, b, type = "n", ylim = range(lo, hi),
+     xlab = "scale s", ylab = expression(beta[x2](s)),
+     main = "x2 coefficient with 95% confidence band")
+polygon(c(fr$s, rev(fr$s)), c(lo, rev(hi)), col = "grey85", border = NA)
+lines(fr$s, b, lwd = 2)
+abline(h = 0.7, lty = 3, col = "grey40")
+```
+
+![x2 coefficient with 95 percent confidence band across
+scales](DFATools_files/figure-html/ci-1.png)
+
+### Collinearity diagnostics
+
+Because the variance now depends on the conditioning of
+$`\mathbf{F}_{XX}(s)`$,
+[`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+reports scale-wise diagnostics: the variance inflation factors `VIF`,
+the condition number `kappa` of the covariates’ scale-wise correlation
+matrix, and the adjusted coefficient of determination `R2adj` (Tilfani
+et al. 2022).
+[`fracreg.diag()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.diag.md)
+returns them as a tidy table:
+
+``` r
+head(fracreg.diag(dat, dpo = 1, int = TRUE, np = 40))
+#> # A tibble: 6 × 5
+#>       s VIF_x2 VIF_x3 kappa R2adj
+#>   <int>  <dbl>  <dbl> <dbl> <dbl>
+#> 1    10   1.00   1.00  1.07 0.350
+#> 2    11   1.00   1.00  1.07 0.344
+#> 3    12   1.00   1.00  1.07 0.339
+#> 4    13   1.00   1.00  1.06 0.334
+#> 5    14   1.00   1.00  1.06 0.330
+#> 6    15   1.00   1.00  1.05 0.325
+```
+
+Here the two drivers are independent, so the `VIF`s sit at 1 and `kappa`
+near 1; a `VIF` rising well above 1 at some scales would flag
+scale-localised collinearity that inflates the coefficient variance — a
+warning with no analogue in ordinary regression.
+
+### Robust standard errors: HC and the wild bootstrap
+
+The analytic variance assumes homoscedastic, independent detrended
+boxes. When that is in doubt, two robustifications are available, both
+built on the per-box detrended moments (so the DFA itself is never
+recomputed):
+
+- `vcov = "HC"` — a heteroscedasticity-consistent (sandwich) variance,
+  $`\mathbf{F}_{XX}^{-1}\boldsymbol{\Omega}\,\mathbf{F}_{XX}^{-1}`$ with
+  $`\boldsymbol{\Omega}`$ the per-box outer product of the moment
+  scores. The coefficients are unchanged — only their variance is. Use
+  `overlap = FALSE`.
+- [`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md)
+  — a **wild bootstrap** of the coefficients that resamples those scores
+  and returns percentile confidence limits and $`p`$-values. The default
+  `weights = "dependent"` is the dependent wild bootstrap of Shao (2010)
+  (robust to dependence across boxes); `"rademacher"` and `"mammen"`
+  (Mammen 1993) give the i.i.d. version, which reproduces the HC
+  variance exactly.
+
+``` r
+fr_hc <- fracreg(dat, dpo = 1, int = TRUE, np = 40, overlap = FALSE, vcov = "HC")
+# HC standard error of the x2 coefficient (first few scales)
+round(sqrt(fr_hc$VDFA[1, 1, ])[1:6], 3)
+#> [1] 0.062 0.071 0.083 0.099 0.078 0.063
+```
+
+``` r
+wb <- fracreg.WB(dat, B = 199, weights = "dependent", np = 20)
+plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2),
+     xlab = "scale s", ylab = expression(beta[x2](s)),
+     main = "x2 coefficient with wild-bootstrap 95% band")
+polygon(c(wb$s, rev(wb$s)), c(wb$lower_x2, rev(wb$upper_x2)),
+        col = "grey85", border = NA)
+lines(wb$s, wb$beta_x2, lwd = 2)
+abline(h = 0.7, lty = 3, col = "grey40")
+```
+
+![x2 coefficient with wild-bootstrap confidence
+band](DFATools_files/figure-html/wb-1.png)
+
+Both the analytic and the bootstrap bands keep `x2` clearly above zero
+at every scale, confirming a robust, scale-consistent positive effect.
+
 ## Significance tests
 
 `DFATools` ships surrogate-based tests for the scale-wise coefficients,
@@ -300,12 +415,12 @@ head(ps)
 #> # A tibble: 6 × 7
 #>    bet1   bet2  slci1  slci2 suci1 suci2     s
 #>   <dbl>  <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
-#> 1 0.577 -0.441 -0.269 -0.419 0.297 0.217    10
-#> 2 0.568 -0.436 -0.282 -0.436 0.319 0.223    11
-#> 3 0.561 -0.432 -0.292 -0.448 0.335 0.226    12
-#> 4 0.555 -0.428 -0.298 -0.456 0.343 0.227    13
-#> 5 0.550 -0.424 -0.311 -0.459 0.344 0.226    14
-#> 6 0.545 -0.420 -0.328 -0.458 0.339 0.223    15
+#> 1 0.577 -0.441 -0.538 -0.264 0.421 0.355    10
+#> 2 0.568 -0.436 -0.574 -0.274 0.451 0.347    11
+#> 3 0.561 -0.432 -0.615 -0.311 0.478 0.346    12
+#> 4 0.555 -0.428 -0.660 -0.339 0.501 0.361    13
+#> 5 0.550 -0.424 -0.706 -0.360 0.514 0.374    14
+#> 6 0.545 -0.420 -0.750 -0.393 0.523 0.386    15
 ```
 
 ``` r
@@ -330,6 +445,17 @@ clear, scale-consistent effect.
   span box sizes from 10 to one fifth of the series length.
 - Use `int = TRUE` for noise-like (stationary) inputs and `int = FALSE`
   when the series are already integrated (random-walk-like).
+- For confidence intervals, keep the default `vcov = "inverse"`; switch
+  to the wild bootstrap
+  ([`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md))
+  when you suspect heteroscedasticity or dependence between boxes, and
+  read the `VIF`/`kappa` diagnostics to spot scales where collinearity
+  inflates the variance.
+- [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+  and
+  [`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md)
+  accept `abs = TRUE` to build the cross-correlation step from the
+  **absolute** detrended covariance, which is more robust to outliers.
 - The surrogate tests are computationally heavy (they refit the model
   `B` times); start small and increase `B` once the workflow is settled.
 
@@ -349,6 +475,10 @@ Regression Framework: Estimating Dependence at Different Scales.”
 *Physical Review E* 91 (2): 022802.
 <https://doi.org/10.1103/PhysRevE.91.022802>.
 
+Mammen, Enno. 1993. “Bootstrap and Wild Bootstrap for High Dimensional
+Linear Models.” *The Annals of Statistics* 21 (1): 255–85.
+<https://doi.org/10.1214/aos/1176349025>.
+
 Peng, C.-K., S. V. Buldyrev, S. Havlin, M. Simons, H. E. Stanley, and A.
 L. Goldberger. 1994. “Mosaic Organization of DNA Nucleotides.” *Physical
 Review E* 49 (2): 1685–89. <https://doi.org/10.1103/PhysRevE.49.1685>.
@@ -363,10 +493,20 @@ Cross-Correlation Analysis: A New Method for Analyzing Two Nonstationary
 Time Series.” *Physical Review Letters* 100 (8): 084102.
 <https://doi.org/10.1103/PhysRevLett.100.084102>.
 
+Shao, Xiaofeng. 2010. “The Dependent Wild Bootstrap.” *Journal of the
+American Statistical Association* 105 (489): 218–35.
+<https://doi.org/10.1198/jasa.2009.tm08744>.
+
 Shen, Chenhua. 2015. “A New Detrended Semipartial Cross-Correlation
 Analysis: Assessing the Important Meteorological Factors Affecting API.”
 *Physics Letters A* 379 (44): 2962–69.
 <https://doi.org/10.1016/j.physleta.2015.08.025>.
+
+Tilfani, Oussama, Ladislav Kristoufek, Paulo Ferreira, and My Youssef El
+Boukfaoui. 2022. “Heterogeneity in Economic Relationships: Scale
+Dependence Through the Multivariate Fractal Regression.” *Physica A:
+Statistical Mechanics and Its Applications* 588: 126530.
+<https://doi.org/10.1016/j.physa.2021.126530>.
 
 Van Deun, Katrijn, Herbert Hoijtink, Lieven Thorrez, Leentje Van Lommel,
 Frans Schuit, and Iven Van Mechelen. 2009. “Testing the Hypothesis of

@@ -38,6 +38,7 @@ common, consistent interface:
 | Multiple cross-correlation | `dmc2()` |
 | Regression at each scale | `betadfa()`, `sbdfa()`, `fracreg()` |
 | Scale-wise effect sizes | `effsizeDFA()` |
+| Coefficient inference, diagnostics & robust SEs | `fracreg()`, `fracreg.diag()`, `fracreg.WB()` |
 | Significance tests | `fracreg.PStest()`, `fracreg.Ktest()`, `fracreg.IUTest()` |
 
 Several of the regression-oriented tools — the scale-dependent **standardized**
@@ -209,6 +210,92 @@ ef <- effsizeDFA(dat, np = 40)
 head(ef)
 ```
 
+## Inference: confidence intervals, diagnostics and robust standard errors
+
+The point estimates above are only half the story. `fracreg()` also quantifies
+the **uncertainty** of every scale-wise coefficient: the returned arrays carry
+the variance (`VDFA`), the 95% confidence limits (`LCIB`, `UCIB`) and two-sided
+`p.value`s, alongside collinearity diagnostics. A coefficient is indexed as
+covariate $j$ at scale $k$ — e.g. `fr$BDFA[j, 1, k]` and `fr$UCIB[j, 1, k]`.
+
+### The coefficient variance
+
+By default (`vcov = "inverse"`) the variance is built from the **full inverse**
+of the predictors' detrended covariance matrix,
+$$
+\operatorname{var}\!\big(\beta_j(s)\big)
+   = F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj},
+$$
+the very matrix that produces $\boldsymbol{\beta}(s)$ [@tilfani2022]. The legacy
+"marginal" variance $F^2_{\varepsilon}(s)/F^2_{X_j}(s)$ ignores the off-diagonal
+structure and **under-covers when the covariates are correlated**; the two agree
+only for orthogonal predictors. Pass `vcov = "marginal"` to recover it.
+
+```{r ci, fig.alt = "x2 coefficient with 95 percent confidence band across scales"}
+fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # vcov = "inverse" (default)
+b  <- fr$BDFA[1, 1, ]                               # x2 coefficient
+lo <- fr$LCIB[1, 1, ]; hi <- fr$UCIB[1, 1, ]
+plot(fr$s, b, type = "n", ylim = range(lo, hi),
+     xlab = "scale s", ylab = expression(beta[x2](s)),
+     main = "x2 coefficient with 95% confidence band")
+polygon(c(fr$s, rev(fr$s)), c(lo, rev(hi)), col = "grey85", border = NA)
+lines(fr$s, b, lwd = 2)
+abline(h = 0.7, lty = 3, col = "grey40")
+```
+
+### Collinearity diagnostics
+
+Because the variance now depends on the conditioning of $\mathbf{F}_{XX}(s)$,
+`fracreg()` reports scale-wise diagnostics: the variance inflation factors
+`VIF`, the condition number `kappa` of the covariates' scale-wise correlation
+matrix, and the adjusted coefficient of determination `R2adj` [@tilfani2022].
+`fracreg.diag()` returns them as a tidy table:
+
+```{r diag}
+head(fracreg.diag(dat, dpo = 1, int = TRUE, np = 40))
+```
+
+Here the two drivers are independent, so the `VIF`s sit at 1 and `kappa` near 1;
+a `VIF` rising well above 1 at some scales would flag scale-localised
+collinearity that inflates the coefficient variance — a warning with no
+analogue in ordinary regression.
+
+### Robust standard errors: HC and the wild bootstrap
+
+The analytic variance assumes homoscedastic, independent detrended boxes. When
+that is in doubt, two robustifications are available, both built on the per-box
+detrended moments (so the DFA itself is never recomputed):
+
+* `vcov = "HC"` — a heteroscedasticity-consistent (sandwich) variance,
+  $\mathbf{F}_{XX}^{-1}\boldsymbol{\Omega}\,\mathbf{F}_{XX}^{-1}$ with
+  $\boldsymbol{\Omega}$ the per-box outer product of the moment scores. The
+  coefficients are unchanged — only their variance is. Use `overlap = FALSE`.
+* `fracreg.WB()` — a **wild bootstrap** of the coefficients that resamples those
+  scores and returns percentile confidence limits and $p$-values. The default
+  `weights = "dependent"` is the dependent wild bootstrap of @shao2010 (robust
+  to dependence across boxes); `"rademacher"` and `"mammen"` [@mammen1993] give
+  the i.i.d. version, which reproduces the HC variance exactly.
+
+```{r hc}
+fr_hc <- fracreg(dat, dpo = 1, int = TRUE, np = 40, overlap = FALSE, vcov = "HC")
+# HC standard error of the x2 coefficient (first few scales)
+round(sqrt(fr_hc$VDFA[1, 1, ])[1:6], 3)
+```
+
+```{r wb, fig.alt = "x2 coefficient with wild-bootstrap confidence band"}
+wb <- fracreg.WB(dat, B = 199, weights = "dependent", np = 20)
+plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2),
+     xlab = "scale s", ylab = expression(beta[x2](s)),
+     main = "x2 coefficient with wild-bootstrap 95% band")
+polygon(c(wb$s, rev(wb$s)), c(wb$lower_x2, rev(wb$upper_x2)),
+        col = "grey85", border = NA)
+lines(wb$s, wb$beta_x2, lwd = 2)
+abline(h = 0.7, lty = 3, col = "grey40")
+```
+
+Both the analytic and the bootstrap bands keep `x2` clearly above zero at every
+scale, confirming a robust, scale-consistent positive effect.
+
 ## Significance tests
 
 `DFATools` ships surrogate-based tests for the scale-wise coefficients, built
@@ -253,6 +340,13 @@ scale-consistent effect.
   10 to one fifth of the series length.
 * Use `int = TRUE` for noise-like (stationary) inputs and `int = FALSE` when the
   series are already integrated (random-walk-like).
+* For confidence intervals, keep the default `vcov = "inverse"`; switch to the
+  wild bootstrap (`fracreg.WB()`) when you suspect heteroscedasticity or
+  dependence between boxes, and read the `VIF`/`kappa` diagnostics to spot scales
+  where collinearity inflates the variance.
+* `fracreg()` and `fracreg.WB()` accept `abs = TRUE` to build the
+  cross-correlation step from the **absolute** detrended covariance, which is
+  more robust to outliers.
 * The surrogate tests are computationally heavy (they refit the model `B` times);
   start small and increase `B` once the workflow is settled.
 
