@@ -49,6 +49,11 @@
 <h3 id="inference-for-fracreg-1-0-0">Inference for <code>fracreg()</code>
 <a class="anchor" aria-label="anchor" href="#inference-for-fracreg-1-0-0"></a></h3>
 <ul><li>The coefficient variance is estimated from the <strong>full inverse</strong> of the detrended covariance matrix of the predictors, <code>var(beta_j(s)) = F2_eps(s) * [F_XX(s)^-1]_jj</code> (Tilfani et al. 2022, Eq. 25), consistent with how the coefficients themselves are estimated. The legacy “marginal” form, <code>F2_eps(s) / F2_Xj(s)</code>, under-covers under multicollinearity; the two coincide for orthogonal predictors. <code>vcov = c("inverse", "marginal",   "HC")</code> selects the estimator (default <code>"inverse"</code>).</li>
+<li>The variance and the matching <code>t</code> quantile are normalised by the residual degrees of freedom <code>T_s - k</code>, where <code>T_s = floor(N / s)</code> is the number of non-overlapping boxes and <code>k</code> the number of predictors (the count of disjoint boxes, regardless of <code>overlap</code>). Scales with <code>T_s &lt;= k</code> return <code>NA</code> limits with a warning.</li>
+<li>
+<code><a href="../reference/fracreg.html">fracreg()</a></code> now returns the per-series DFA exponent <code>$alpha</code> and warns when it exceeds 3/4 in any series, where the analytic interval can under-cover under strong long-range dependence (Hermite-Rosenblatt threshold) and the dependent wild bootstrap (<code><a href="../reference/fracreg.WB.html">fracreg.WB()</a></code>) is preferred.</li>
+<li>
+<code><a href="../reference/fracreg.html">fracreg()</a></code> now reports <strong>two-sided</strong> p-values (<code>$p.value</code>) for the scale-dependent coefficients, <code>2 * (1 - pt(|t|, T_s - k))</code>.</li>
 <li>
 <code>vcov = "HC"</code> is an experimental heteroscedasticity-consistent (sandwich) estimator built from per-box detrended-moment scores; <code>overlap = FALSE</code> is recommended.</li>
 <li>Scale-wise collinearity diagnostics are returned: the variance inflation factors <code>$VIF</code>, the condition number <code>$kappa</code> of the predictors’ scale-wise correlation matrix, and the adjusted coefficient of determination <code>$R2adj</code> (Tilfani et al. 2022, Eq. 26). <code><a href="../reference/fracreg.diag.html">fracreg.diag()</a></code> returns them as a tidy tibble.</li>

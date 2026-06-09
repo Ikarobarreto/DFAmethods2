@@ -35,6 +35,21 @@ one place.
   under-covers under multicollinearity; the two coincide for orthogonal
   predictors. `vcov = c("inverse", "marginal", "HC")` selects the
   estimator (default `"inverse"`).
+- The variance and the matching `t` quantile are normalised by the
+  residual degrees of freedom `T_s - k`, where `T_s = floor(N / s)` is
+  the number of non-overlapping boxes and `k` the number of predictors
+  (the count of disjoint boxes, regardless of `overlap`). Scales with
+  `T_s <= k` return `NA` limits with a warning.
+- [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+  now returns the per-series DFA exponent `$alpha` and warns when it
+  exceeds 3/4 in any series, where the analytic interval can under-cover
+  under strong long-range dependence (Hermite-Rosenblatt threshold) and
+  the dependent wild bootstrap
+  ([`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md))
+  is preferred.
+- [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+  now reports **two-sided** p-values (`$p.value`) for the
+  scale-dependent coefficients, `2 * (1 - pt(|t|, T_s - k))`.
 - `vcov = "HC"` is an experimental heteroscedasticity-consistent
   (sandwich) estimator built from per-box detrended-moment scores;
   `overlap = FALSE` is recommended.

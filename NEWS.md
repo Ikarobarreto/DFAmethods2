@@ -37,6 +37,8 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   exceeds 3/4 in any series, where the analytic interval can under-cover under
   strong long-range dependence (Hermite-Rosenblatt threshold) and the dependent
   wild bootstrap (`fracreg.WB()`) is preferred.
+* `fracreg()` now reports **two-sided** p-values (`$p.value`) for the
+  scale-dependent coefficients, `2 * (1 - pt(|t|, T_s - k))`.
 * `vcov = "HC"` is an experimental heteroscedasticity-consistent (sandwich)
   estimator built from per-box detrended-moment scores; `overlap = FALSE` is
   recommended.

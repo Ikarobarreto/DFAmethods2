@@ -323,7 +323,7 @@ for(k in 1:np){
 	dfk<-floor(size/sn[[k]])-(nc-1); vn[1,i,k]<-ifelse(dfk>0,vn[1,i,k],NA)
 	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
 	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
-	tn [i,1,k]<-as.matrix(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(dfk>0,dfk,NA)))
+	tn [i,1,k]<-as.matrix(2*(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(dfk>0,dfk,NA))))
 	tnc[i,1,k]<-as.matrix(qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k]))
 	}}
 

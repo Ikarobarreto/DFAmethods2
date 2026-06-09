@@ -233,8 +233,36 @@ legend("right", c("x2", "x3"), col = 1:2, lty = 1, lwd = 2, bty = "n")
 
 ![](DFATools_files/figure-html/betadfa-1.png)
 
-The estimates hover around the true coefficients $`0.7`$ and $`-0.5`$ at
-every scale.
+The single-path estimates sit near the true coefficients $`0.7`$ and
+$`-0.5`$, but a single realisation cannot establish unbiasedness —
+averaging over scales does not shrink the sampling error of one path. A
+small Monte Carlo experiment with **stationary** predictors makes the
+recovery rigorous, reporting the mean and the Monte Carlo standard error
+(MCSE) over replications:
+
+``` r
+set.seed(1)
+n <- 1500; nsim <- 100
+b <- c(x2 = 0.7, x3 = -0.5)
+est <- t(replicate(nsim, {
+  x2 <- rnorm(n); x3 <- rnorm(n)
+  d  <- data.frame(y = b["x2"] * x2 + b["x3"] * x3 + rnorm(n, sd = 0.5),
+                   x2 = x2, x3 = x3)
+  fit <- fracreg(d, dpo = 1, int = TRUE, np = 30, overlap = FALSE)
+  ce  <- which(fit$s >= 20 & fit$s <= n / 10)        # central scales
+  c(mean(fit$BDFA[1, 1, ce]), mean(fit$BDFA[2, 1, ce]))
+}))
+round(rbind(true = b,
+            mean = colMeans(est),
+            mcse = apply(est, 2, sd) / sqrt(nsim)), 3)
+#>         x2     x3
+#> true 0.700 -0.500
+#> mean 0.703 -0.502
+#> mcse 0.004  0.003
+```
+
+Both coefficients are recovered to within a couple of Monte Carlo
+standard errors of their true values.
 
 [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
 is the all-in-one workhorse: a single call returns the scale vector,
@@ -247,7 +275,7 @@ fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)
 names(fr)
 #>  [1] "s"       "F"       "DCCA"    "DPCCA"   "BDFA"    "BSDFA"   "UDFA"   
 #>  [8] "VDFA"    "VDFA2"   "DMC2"    "R2DFA"   "UCIB"    "LCIB"    "p.value"
-#> [15] "TC"      "VIF"     "kappa"   "R2adj"
+#> [15] "TC"      "VIF"     "kappa"   "R2adj"   "alpha"
 ```
 
 ### Scale-wise effect sizes
@@ -415,12 +443,12 @@ head(ps)
 #> # A tibble: 6 × 7
 #>    bet1   bet2  slci1  slci2 suci1 suci2     s
 #>   <dbl>  <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
-#> 1 0.577 -0.441 -0.538 -0.264 0.421 0.355    10
-#> 2 0.568 -0.436 -0.574 -0.274 0.451 0.347    11
-#> 3 0.561 -0.432 -0.615 -0.311 0.478 0.346    12
-#> 4 0.555 -0.428 -0.660 -0.339 0.501 0.361    13
-#> 5 0.550 -0.424 -0.706 -0.360 0.514 0.374    14
-#> 6 0.545 -0.420 -0.750 -0.393 0.523 0.386    15
+#> 1 0.577 -0.441 -0.463 -0.429 0.493 0.420    10
+#> 2 0.568 -0.436 -0.494 -0.448 0.515 0.445    11
+#> 3 0.561 -0.432 -0.521 -0.465 0.539 0.468    12
+#> 4 0.555 -0.428 -0.545 -0.479 0.563 0.490    13
+#> 5 0.550 -0.424 -0.567 -0.493 0.568 0.510    14
+#> 6 0.545 -0.420 -0.586 -0.506 0.569 0.529    15
 ```
 
 ``` r

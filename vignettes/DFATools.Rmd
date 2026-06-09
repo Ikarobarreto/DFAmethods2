@@ -187,7 +187,31 @@ abline(h = c(0.7, -0.5), lty = 3, col = "grey50")
 legend("right", c("x2", "x3"), col = 1:2, lty = 1, lwd = 2, bty = "n")
 ```
 
-The estimates hover around the true coefficients $0.7$ and $-0.5$ at every scale.
+The single-path estimates sit near the true coefficients $0.7$ and $-0.5$, but a
+single realisation cannot establish unbiasedness --- averaging over scales does
+not shrink the sampling error of one path. A small Monte Carlo experiment with
+**stationary** predictors makes the recovery rigorous, reporting the mean and the
+Monte Carlo standard error (MCSE) over replications:
+
+```{r mc}
+set.seed(1)
+n <- 1500; nsim <- 100
+b <- c(x2 = 0.7, x3 = -0.5)
+est <- t(replicate(nsim, {
+  x2 <- rnorm(n); x3 <- rnorm(n)
+  d  <- data.frame(y = b["x2"] * x2 + b["x3"] * x3 + rnorm(n, sd = 0.5),
+                   x2 = x2, x3 = x3)
+  fit <- fracreg(d, dpo = 1, int = TRUE, np = 30, overlap = FALSE)
+  ce  <- which(fit$s >= 20 & fit$s <= n / 10)        # central scales
+  c(mean(fit$BDFA[1, 1, ce]), mean(fit$BDFA[2, 1, ce]))
+}))
+round(rbind(true = b,
+            mean = colMeans(est),
+            mcse = apply(est, 2, sd) / sqrt(nsim)), 3)
+```
+
+Both coefficients are recovered to within a couple of Monte Carlo standard errors
+of their true values.
 
 `fracreg()` is the all-in-one workhorse: a single call returns the scale vector,
 detrended (partial) correlations, raw and standardised $\beta(s)$, the

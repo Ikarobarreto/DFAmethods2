@@ -62,6 +62,7 @@ set.seed(1)
 d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
                 x2 = cumsum(rnorm(300)))
 fracreg.diag(d, np = 20)
+#> Warning: fracreg(): estimated DFA exponent above 0.73 (near or beyond the H = 3/4 Hermite-Rosenblatt threshold) in at least one series; the analytic confidence interval can under-cover under strong long-range dependence. Prefer fracreg.WB(..., weights = 'dependent').
 #> # A tibble: 20 × 5
 #>        s VIF_x1 VIF_x2 kappa       R2adj
 #>    <int>  <dbl>  <dbl> <dbl>       <dbl>
