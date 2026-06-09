@@ -9,11 +9,12 @@ together with scale-wise collinearity diagnostics.
 ``` r
 fracreg(
   data,
-  dpo,
-  int,
+  dpo = 1,
+  int = TRUE,
   np = 91,
-  overlap = TRUE,
-  vcov = c("inverse", "marginal", "HC"),
+  overlap = FALSE,
+  variance = c("inv_corrected", "inv", "marginal", "hc", "none"),
+  H_eps = NULL,
   abs = FALSE
 )
 ```
@@ -39,16 +40,27 @@ fracreg(
 
 - overlap:
 
-  logical. If TRUE overlapping windows are applied.
+  logical. If TRUE overlapping windows are used. Defaults to FALSE:
+  score-based inference treats the boxes as sampling units and requires
+  them disjoint. With `overlap = TRUE` only point estimates are returned
+  (`variance = "none"`).
 
-- vcov:
+- variance:
 
-  coefficient-variance estimator: `"inverse"` (default; full
-  \\F\_{XX}(s)^{-1}\\, Tilfani et al. 2022), `"marginal"` (legacy
-  \\1/F^2\_{X_j}(s)\\, Shen 2015), or `"HC"` (experimental
-  heteroscedasticity-consistent sandwich built from the per-box
-  detrended moment scores; `overlap = FALSE` is recommended and the
-  finite-sample normalisation is still being calibrated).
+  coefficient-variance estimator: `"inv_corrected"` (default) the
+  memory-corrected inverse form
+  \\F^2\_\varepsilon(s)\[F\_{XX}(s)^{-1}\]\_{jj}/(T_s-k)\cdot(2\widehat
+  H+1)^2/21\\ (Barreto et al. 2026, Eq. M4.2'); `"inv"` the uncorrected
+  inverse (Tilfani et al. 2022); `"marginal"` the legacy
+  \\1/F^2\_{X_j}(s)\\ form (Shen 2015), which under-covers under
+  collinearity; `"hc"` the heteroscedasticity-consistent sandwich; or
+  `"none"` for point estimates only.
+
+- H_eps:
+
+  optional numeric. A pre-computed DFA exponent of the regression error
+  to use in the memory correction; if `NULL` (default) it is estimated
+  from the OLS residual.
 
 - abs:
 
@@ -62,8 +74,10 @@ A list with, among others: scale `s`, detrended fluctuation `F`, `DCCA`,
 variance `UDFA`, coefficient variance `VDFA`, multiple correlation
 `DMC2`, `R2DFA`, confidence limits `UCIB`/`LCIB`, `p.value`, critical
 value `TC`, the scale-wise diagnostics `VIF`, condition number `kappa`
-and adjusted `R2adj`, and the per-series DFA exponent `alpha` (a
-long-memory proxy).
+and adjusted `R2adj`, the per-series DFA exponent `alpha`, the residual
+DFA exponent `H_resid` and memory factor `kappa_factor` used in the
+correction, the chosen `variance_method`, the effective degrees of
+freedom `df_eff` and the box counts `Ts`.
 
 ## Details
 
@@ -73,8 +87,13 @@ The variance of the scale-dependent coefficients follows Tilfani et al.
 detrended covariance matrix of the predictors, consistent with how the
 coefficients themselves are estimated. Under collinearity this differs
 from the legacy "marginal" form \\F^2\_\varepsilon(s) / F^2\_{X_j}(s)\\
-(which under-covers); the two coincide for orthogonal predictors. Set
-`vcov = "marginal"` to reproduce the legacy behaviour.
+(which under-covers); the two coincide for orthogonal predictors. The
+default `variance = "inv_corrected"` multiplies the inverse form by the
+memory-correction factor \\(2\widehat H + 1)^2 / 21\\ (Barreto et al.
+2026, Eq. M4.2'), with \\\widehat H\\ the DFA exponent of the OLS
+residual, restoring nominal coverage under polynomial detrending;
+`variance = "inv"` omits the factor and `variance = "marginal"`
+reproduces the legacy form.
 
 The variance is normalised by the residual degrees of freedom \\T_s -
 k\\, where \\T_s = \lfloor N/s \rfloor\\ is the number of

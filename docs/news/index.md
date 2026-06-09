@@ -27,14 +27,24 @@ one place.
 
 ### Inference for `fracreg()`
 
-- The coefficient variance is estimated from the **full inverse** of the
-  detrended covariance matrix of the predictors,
-  `var(beta_j(s)) = F2_eps(s) * [F_XX(s)^-1]_jj` (Tilfani et al. 2022,
-  Eq. 25), consistent with how the coefficients themselves are
-  estimated. The legacy “marginal” form, `F2_eps(s) / F2_Xj(s)`,
-  under-covers under multicollinearity; the two coincide for orthogonal
-  predictors. `vcov = c("inverse", "marginal", "HC")` selects the
-  estimator (default `"inverse"`).
+- **Default coefficient variance is now the memory-corrected inverse
+  form** (Barreto et al. 2026, Eq. M4.2’):
+  `var(beta_j(s)) = F2_eps(s) * [F_XX(s)^-1]_jj / (T_s - k) * (2 H_hat + 1)^2 / 21`,
+  where `H_hat` is the DFA exponent of the OLS residual (estimated
+  internally, or supplied via `H_eps`). The factor restores nominal CI
+  coverage under polynomial detrending; the uncorrected inverse
+  over-covers and the legacy marginal form under-covers under
+  collinearity. The estimator is selected with
+  `variance = c("inv_corrected", "inv", "marginal", "hc", "none")` (this
+  replaces the former `vcov` argument).
+- **`overlap` now defaults to `FALSE`.** Score-based inference treats
+  the boxes as disjoint sampling units; `overlap = TRUE` returns point
+  estimates only (`variance = "none"`) with a message.
+- [`fracreg()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.md)
+  gains output fields `H_resid` (residual DFA exponent), `kappa_factor`
+  (the memory factor), `variance_method`, `df_eff` (= `T_s - k`) and
+  `Ts` (= `floor(N / s)`). The adjusted R-squared now uses `T_s` (Eq.
+  M3.1).
 - The variance and the matching `t` quantile are normalised by the
   residual degrees of freedom `T_s - k`, where `T_s = floor(N / s)` is
   the number of non-overlapping boxes and `k` the number of predictors

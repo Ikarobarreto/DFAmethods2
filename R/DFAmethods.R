@@ -106,8 +106,12 @@ utils::globalVariables(c("s", "rho"))
 #' covariance matrix of the predictors, consistent with how the coefficients
 #' themselves are estimated. Under collinearity this differs from the legacy
 #' "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
-#' the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
-#' reproduce the legacy behaviour.
+#' the two coincide for orthogonal predictors. The default
+#' \code{variance = "inv_corrected"} multiplies the inverse form by the
+#' memory-correction factor \eqn{(2\widehat H + 1)^2 / 21} (Barreto et al. 2026,
+#' Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of the OLS residual,
+#' restoring nominal coverage under polynomial detrending; \code{variance = "inv"}
+#' omits the factor and \code{variance = "marginal"} reproduces the legacy form.
 #'
 #' The variance is normalised by the residual degrees of freedom
 #' \eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of
@@ -124,13 +128,21 @@ utils::globalVariables(c("s", "rho"))
 #' @param dpo detrending polynomial order.
 #' @param int logical. If TRUE the integration process is applied.
 #' @param np number of point scales.
-#' @param overlap logical. If TRUE overlapping windows are applied.
-#' @param vcov coefficient-variance estimator: \code{"inverse"} (default; full
-#'   \eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022), \code{"marginal"} (legacy
-#'   \eqn{1/F^2_{X_j}(s)}, Shen 2015), or \code{"HC"} (experimental
-#'   heteroscedasticity-consistent sandwich built from the per-box detrended
-#'   moment scores; \code{overlap = FALSE} is recommended and the finite-sample
-#'   normalisation is still being calibrated).
+#' @param overlap logical. If TRUE overlapping windows are used. Defaults to
+#'   FALSE: score-based inference treats the boxes as sampling units and requires
+#'   them disjoint. With \code{overlap = TRUE} only point estimates are returned
+#'   (\code{variance = "none"}).
+#' @param variance coefficient-variance estimator:
+#'   \code{"inv_corrected"} (default) the memory-corrected inverse form
+#'   \eqn{F^2_\varepsilon(s)[F_{XX}(s)^{-1}]_{jj}/(T_s-k)\cdot(2\widehat H+1)^2/21}
+#'   (Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
+#'   (Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
+#'   form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
+#'   heteroscedasticity-consistent sandwich; or \code{"none"} for point estimates
+#'   only.
+#' @param H_eps optional numeric. A pre-computed DFA exponent of the regression
+#'   error to use in the memory correction; if \code{NULL} (default) it is
+#'   estimated from the OLS residual.
 #' @param abs logical. If TRUE the absolute detrended covariance is used in the
 #'   cross-correlation step (more robust to outliers).
 #' @return A list with, among others: scale \code{s}, detrended fluctuation
@@ -139,8 +151,11 @@ utils::globalVariables(c("s", "rho"))
 #'   variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
 #'   confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
 #'   \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
-#'   \code{kappa} and adjusted \code{R2adj}, and the per-series DFA exponent
-#'   \code{alpha} (a long-memory proxy).
+#'   \code{kappa} and adjusted \code{R2adj}, the per-series DFA exponent
+#'   \code{alpha}, the residual DFA exponent \code{H_resid} and memory factor
+#'   \code{kappa_factor} used in the correction, the chosen
+#'   \code{variance_method}, the effective degrees of freedom \code{df_eff} and
+#'   the box counts \code{Ts}.
 #' @references
 #' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
 #' Extending DFA-based multiple linear regression inference: application to
@@ -177,13 +192,26 @@ utils::globalVariables(c("s", "rho"))
 #' round(fit$BDFA[, 1, 10], 2)               # coefficients at the 10th scale
 #' @useDynLib DFATools, .registration=TRUE
 
-fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal","HC"),abs=FALSE){
+fracreg<-function(data,dpo=1,int=TRUE,np=91,overlap=FALSE,
+                  variance=c("inv_corrected","inv","marginal","hc","none"),
+                  H_eps=NULL,abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
-	vcov<-match.arg(vcov)
+	variance<-match.arg(variance)
 	if(!is.logical(abs)||length(abs)!=1L||is.na(abs))
 		stop("fracreg(): `abs` must be a single TRUE or FALSE.", call.=FALSE)
+	if(!is.null(H_eps)&&(!is.numeric(H_eps)||length(H_eps)!=1L))
+		stop("fracreg(): `H_eps` must be NULL or a single number.", call.=FALSE)
+	# Score-based inference treats the boxes as sampling units and requires them
+	# disjoint; overlapping windows invalidate the standard errors (paper M8).
+	if(isTRUE(overlap)&&variance!="none"){
+		message("fracreg(): overlap = TRUE invalidates score-based standard errors; ",
+			"returning point estimates only (variance = \"none\"). ",
+			"Use overlap = FALSE for valid confidence intervals.")
+		variance<-"none"
+	}
 	data<-as.matrix(data)
+	dpo0<-as.numeric(dpo)
 	dpo<-as.numeric(dpo+1)
 	if (int ==TRUE){int=1} else{int=0}
 	nc<-ncol(data)
@@ -280,6 +308,29 @@ u<-NULL
 u1<-NULL
 }
 for(k in 1:np){
+	if(k==1L){
+		# Memory-correction factor (Barreto et al. 2026, Eq. M4.2'):
+		# kappa(H) = (2H+1)^2 / 21, with H the DFA-1 exponent of the OLS RESIDUAL
+		# (the error's long memory drives the score CLT, not the predictors').
+		if(is.null(H_eps)){
+			ols_res<-as.numeric(stats::residuals(stats::lm(data[,1]~data[,-1,drop=FALSE])))
+			rd<-dfa(ols_res,dpo=dpo0,int=TRUE,np=np,overlap=FALSE)
+			ok<-rd$s>=max(10,min(rd$s))&rd$s<=floor(size/10)&rd$F>0
+			# dfa()$F is the mean-squared fluctuation F^2(s), so the DFA exponent
+			# (Hurst) is HALF the slope of log F^2 against log s.
+			H_resid<-if(sum(ok)<4) NA_real_ else
+				0.5*stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
+		}else H_resid<-H_eps
+		if(is.na(H_resid)||H_resid<0.3||H_resid>1.2){
+			if(variance=="inv_corrected")
+				warning("fracreg(): could not reliably estimate the residual DFA exponent; ",
+					"using kappa = 1 (no memory correction).",call.=FALSE)
+			H_resid<-NA_real_; kappa_factor<-1
+		}else{
+			H_resid<-min(max(H_resid,0.5),1-1e-6)   # clamp mild excursions into [0.5, 1)
+			kappa_factor<-(2*H_resid+1)^2/21
+		}
+	}
 	F2eps<-fn[1,1,k]-dmc2[k]*fn[1,1,k]   # detrended residual variance F^2_eps(s)
 	# Coefficient (co)variance matrix of the predictors and its inverse (reused
 	# from the beta estimate). The variance of beta_j(s) is, per Tilfani et al.
@@ -295,16 +346,19 @@ for(k in 1:np){
 	# model-based residual fraction, consistent with the variance estimator and
 	# bounded to (-Inf, 1] (the direct residual DFA can be unstable at extreme
 	# scales).
-	r2adj[1,1,k]<-1-((size-1)/(size-(nc-1)-1))*(1-dmc2[k])
+	Tsk<-floor(size/sn[[k]])                         # M3.1: T_s-based adjusted R^2
+		r2adj[1,1,k]<-1-((Tsk-1)/(Tsk-(nc-1)-1))*(1-dmc2[k])
 	for(i in (2:nc)){
-	  if(vcov=="inverse"){
-	    vn[,(i-1),k]<-F2eps*Mk[(i-1),(i-1)]/(floor(size/sn[[k]])-(nc-1))
-	  }else{
-	    vn[,(i-1),k]<-F2eps*(1/fn[i,i,k])/(floor(size/sn[[k]])-(nc-1))
-	  }
+	  dfk<-floor(size/sn[[k]])-(nc-1)
+	  base_j<-switch(variance,
+	    inv_corrected = Mk[(i-1),(i-1)]*kappa_factor,   # M4.2': inverse x kappa(H)
+	    inv           = Mk[(i-1),(i-1)],                # M4.2: inverse, no correction
+	    marginal      = 1/fn[i,i,k],                    # M4.1: legacy marginal
+	    Mk[(i-1),(i-1)])                                # hc/none: placeholder
+	  vn[,(i-1),k]<-F2eps*base_j/dfk
 	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
 		}}
-if(vcov=="HC"){
+if(variance=="hc"){
 	# Heteroscedasticity-consistent (sandwich) variance, per scale s:
 	# Var_HC = (1/Ts) F_XX^-1 Omega F_XX^-1, Omega = (1/Ts) sum_v r_v r_v' (HC1),
 	# from the per-box moment scores r_v = s_xy(s,v) - S_xx(s,v) beta_hat.
@@ -320,32 +374,34 @@ if(vcov=="HC"){
 }
 for(k in 1:np){
 	for(i in 1:(nc-1)){
-	dfk<-floor(size/sn[[k]])-(nc-1); vn[1,i,k]<-ifelse(dfk>0,vn[1,i,k],NA)
+	dfk<-if(variance=="none") 0 else floor(size/sn[[k]])-(nc-1)
+	vn[1,i,k]<-ifelse(dfk>0,vn[1,i,k],NA)
 	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
 	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
 	tn [i,1,k]<-as.matrix(2*(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(dfk>0,dfk,NA))))
 	tnc[i,1,k]<-as.matrix(qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k]))
 	}}
 
-	# Memory proxy: the DFA exponent (slope of log F(s) vs log s) of each series,
-	# reusing the fluctuation functions in fn. Under correct use of `int` this
-	# estimates the Hurst exponent H. The analytic interval (inverse/marginal) can
-	# under-cover under strong long-range dependence (H > 3/4, Hermite-Rosenblatt),
-	# where the dependent wild bootstrap (fracreg.WB) should be preferred.
+	# Per-series DFA exponents (informative). The OLS-residual exponent H_resid
+	# (estimated above) is what drives the memory correction and the CLT regime.
 	alpha<-vapply(seq_len(nc),function(ii)
 		stats::coef(stats::lm(0.5*log(fn[ii,ii,])~log(sn)))[[2]],numeric(1))
 	names(alpha)<-colnames(data)
-	if(any(alpha>0.73,na.rm=TRUE))
-		warning("fracreg(): estimated DFA exponent above 0.73 (near or beyond the ",
-			"H = 3/4 Hermite-Rosenblatt threshold) in at least one series; the ",
-			"analytic confidence interval can under-cover under strong long-range ",
-			"dependence. Prefer fracreg.WB(..., weights = 'dependent').",call.=FALSE)
-	if(any(floor(size/sn)-(nc-1)<=0,na.rm=TRUE))
+	if(variance!="none"&&!is.na(H_resid)&&H_resid>0.75)
+		warning("fracreg(): residual DFA exponent H_resid = ",round(H_resid,2),
+			" exceeds 3/4 (Hermite-Rosenblatt threshold); the analytic interval can ",
+			"under-cover under strong long-range dependence. Prefer ",
+			"fracreg.WB(..., weights = 'dependent').",call.=FALSE)
+	if(variance!="none"&&any(floor(size/sn)-(nc-1)<=0,na.rm=TRUE))
 		warning("fracreg(): some scale(s) have T_s = floor(N/s) not exceeding the ",
 			"number of predictors; their standard errors, confidence limits and ",
 			"p-values are returned as NA.",call.=FALSE)
-fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj,alpha)
-names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha")
+	Tsv<-floor(size/sn)                          # non-overlapping box count per scale
+	df_eff<-Tsv-(nc-1)                           # residual degrees of freedom T_s - k
+	kappa_factor_v<-rep(kappa_factor,np)         # memory factor (constant across s)
+fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj,alpha,
+	H_resid,kappa_factor_v,variance,df_eff,Tsv)
+names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha","H_resid","kappa_factor","variance_method","df_eff","Ts")
 
 return(fracreg)
 }
@@ -382,7 +438,7 @@ return(fracreg)
 #' @export
 fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs = FALSE) {
   fit <- fracreg(data, dpo = dpo, int = int, np = np, overlap = overlap,
-                 vcov = "inverse", abs = abs)
+                 variance = "none", abs = abs)
   nc <- ncol(as.matrix(data))
   cn <- colnames(data)
   if (is.null(cn)) cn <- paste0("x", seq_len(nc))
@@ -395,7 +451,7 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
 }
 
 # Internal: per-box detrended (co)variance scores for the fractal regression.
-# Shared core for vcov = "HC" and fracreg.WB(). For each scale it returns the box
+# Shared core for variance = "hc" and fracreg.WB(). For each scale it returns the box
 # size, the number of boxes Ts, the inverse F_XX(s)^-1, the coefficient vector
 # beta_hat, and the Ts x k matrix of per-box moment scores whose v-th row is
 # r_v' = s_xy(s,v) - (S_xx(s,v) beta_hat)'. Uses the rdfa_box/rdcca_box C
@@ -477,7 +533,7 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
 #'
 #' Wild-bootstrap confidence intervals and significance for the scale-dependent
 #' regression coefficients. It resamples the per-box detrended-moment scores
-#' (the same scores used by \code{fracreg(vcov = "HC")}), so it is robust to
+#' (the same scores used by \code{fracreg(variance = "hc")}), so it is robust to
 #' heteroscedasticity and -- with dependent weights -- to dependence between
 #' boxes, and it does not recompute the DFA for each replicate.
 #'

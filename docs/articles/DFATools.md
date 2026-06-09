@@ -273,9 +273,12 @@ $`p`$-values:
 ``` r
 fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)
 names(fr)
-#>  [1] "s"       "F"       "DCCA"    "DPCCA"   "BDFA"    "BSDFA"   "UDFA"   
-#>  [8] "VDFA"    "VDFA2"   "DMC2"    "R2DFA"   "UCIB"    "LCIB"    "p.value"
-#> [15] "TC"      "VIF"     "kappa"   "R2adj"   "alpha"
+#>  [1] "s"               "F"               "DCCA"            "DPCCA"          
+#>  [5] "BDFA"            "BSDFA"           "UDFA"            "VDFA"           
+#>  [9] "VDFA2"           "DMC2"            "R2DFA"           "UCIB"           
+#> [13] "LCIB"            "p.value"         "TC"              "VIF"            
+#> [17] "kappa"           "R2adj"           "alpha"           "H_resid"        
+#> [21] "kappa_factor"    "variance_method" "df_eff"          "Ts"
 ```
 
 ### Scale-wise effect sizes
@@ -312,21 +315,27 @@ diagnostics. A coefficient is indexed as covariate $`j`$ at scale $`k`$
 
 ### The coefficient variance
 
-By default (`vcov = "inverse"`) the variance is built from the **full
-inverse** of the predictors’ detrended covariance matrix,
+By default (`variance = "inv_corrected"`) the variance is built from the
+**full inverse** of the predictors’ detrended covariance matrix,
+normalised by the box count $`T_s = \lfloor N/s\rfloor`$ minus the
+number of predictors $`k`$, and scaled by a memory-correction factor,
 ``` math
 
-\operatorname{var}\!\big(\beta_j(s)\big)
-   = F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj},
+\operatorname{var}\!\big(\hat\beta_j(s)\big)
+   = \frac{F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj}}{T_s - k}
+   \cdot \frac{(2\widehat H + 1)^2}{21}.
 ```
-the very matrix that produces $`\boldsymbol{\beta}(s)`$(Tilfani et al.
-2022). The legacy “marginal” variance
-$`F^2_{\varepsilon}(s)/F^2_{X_j}(s)`$ ignores the off-diagonal structure
-and **under-covers when the covariates are correlated**; the two agree
-only for orthogonal predictors. Pass `vcov = "marginal"` to recover it.
+The inverse is the matrix that produces
+$`\boldsymbol{\beta}(s)`$(Tilfani et al. 2022); the factor depends on
+the DFA exponent $`\widehat H`$ of the regression error (estimated from
+the OLS residual) and restores nominal coverage under polynomial
+detrending. `variance = "inv"` drops the factor, and the legacy
+`variance = "marginal"` form $`F^2_{\varepsilon}(s)/F^2_{X_j}(s)`$
+ignores the off-diagonal structure and **under-covers when the
+covariates are correlated**.
 
 ``` r
-fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # vcov = "inverse" (default)
+fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # variance = "inv_corrected" (default)
 b  <- fr$BDFA[1, 1, ]                               # x2 coefficient
 lo <- fr$LCIB[1, 1, ]; hi <- fr$UCIB[1, 1, ]
 plot(fr$s, b, type = "n", ylim = range(lo, hi),
@@ -357,12 +366,12 @@ head(fracreg.diag(dat, dpo = 1, int = TRUE, np = 40))
 #> # A tibble: 6 × 5
 #>       s VIF_x2 VIF_x3 kappa R2adj
 #>   <int>  <dbl>  <dbl> <dbl> <dbl>
-#> 1    10   1.00   1.00  1.07 0.350
-#> 2    11   1.00   1.00  1.07 0.344
-#> 3    12   1.00   1.00  1.07 0.339
-#> 4    13   1.00   1.00  1.06 0.334
-#> 5    14   1.00   1.00  1.06 0.330
-#> 6    15   1.00   1.00  1.05 0.325
+#> 1    10   1.00   1.00  1.07 0.340
+#> 2    11   1.00   1.00  1.07 0.333
+#> 3    12   1.00   1.00  1.07 0.327
+#> 4    13   1.00   1.00  1.06 0.321
+#> 5    14   1.00   1.00  1.06 0.315
+#> 6    15   1.00   1.00  1.05 0.309
 ```
 
 Here the two drivers are independent, so the `VIF`s sit at 1 and `kappa`
@@ -377,7 +386,8 @@ boxes. When that is in doubt, two robustifications are available, both
 built on the per-box detrended moments (so the DFA itself is never
 recomputed):
 
-- `vcov = "HC"` — a heteroscedasticity-consistent (sandwich) variance,
+- `variance = "hc"` — a heteroscedasticity-consistent (sandwich)
+  variance,
   $`\mathbf{F}_{XX}^{-1}\boldsymbol{\Omega}\,\mathbf{F}_{XX}^{-1}`$ with
   $`\boldsymbol{\Omega}`$ the per-box outer product of the moment
   scores. The coefficients are unchanged — only their variance is. Use
@@ -391,7 +401,7 @@ recomputed):
   variance exactly.
 
 ``` r
-fr_hc <- fracreg(dat, dpo = 1, int = TRUE, np = 40, overlap = FALSE, vcov = "HC")
+fr_hc <- fracreg(dat, dpo = 1, int = TRUE, np = 40, overlap = FALSE, variance = "hc")
 # HC standard error of the x2 coefficient (first few scales)
 round(sqrt(fr_hc$VDFA[1, 1, ])[1:6], 3)
 #> [1] 0.062 0.071 0.083 0.099 0.078 0.063
@@ -473,8 +483,8 @@ clear, scale-consistent effect.
   span box sizes from 10 to one fifth of the series length.
 - Use `int = TRUE` for noise-like (stationary) inputs and `int = FALSE`
   when the series are already integrated (random-walk-like).
-- For confidence intervals, keep the default `vcov = "inverse"`; switch
-  to the wild bootstrap
+- For confidence intervals, keep the default
+  `variance = "inv_corrected"`; switch to the wild bootstrap
   ([`fracreg.WB()`](https://ikarobarreto.github.io/DFATools/reference/fracreg.WB.md))
   when you suspect heteroscedasticity or dependence between boxes, and
   read the `VIF`/`kappa` diagnostics to spot scales where collinearity

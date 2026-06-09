@@ -3,7 +3,7 @@
 Wild-bootstrap confidence intervals and significance for the
 scale-dependent regression coefficients. It resamples the per-box
 detrended-moment scores (the same scores used by
-`fracreg(vcov = "HC")`), so it is robust to heteroscedasticity and –
+`fracreg(variance = "hc")`), so it is robust to heteroscedasticity and –
 with dependent weights – to dependence between boxes, and it does not
 recompute the DFA for each replicate.
 

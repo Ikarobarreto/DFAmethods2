@@ -2,19 +2,19 @@
 # integrates the stationary input into the profile). Non-overlapping boxes are
 # the sampling units of the analytic inference.
 
-test_that("fracreg variance: 'inverse' equals 'marginal' for a single predictor", {
+test_that("fracreg variance: 'inv' equals 'marginal' for a single predictor", {
   set.seed(1)
   n <- 800
   x <- rnorm(n)
   y <- 0.6 * x + rnorm(n)
   d <- cbind(y = y, x = x)
-  vi <- fracreg(d, dpo = 1, int = TRUE, np = 15, overlap = FALSE, vcov = "inverse")$VDFA
-  vm <- fracreg(d, dpo = 1, int = TRUE, np = 15, overlap = FALSE, vcov = "marginal")$VDFA
+  vi <- fracreg(d, dpo = 1, int = TRUE, np = 15, overlap = FALSE, variance = "inv")$VDFA
+  vm <- fracreg(d, dpo = 1, int = TRUE, np = 15, overlap = FALSE, variance = "marginal")$VDFA
   # the 1x1 inverse is exactly 1 / value, so the two estimators coincide
   expect_equal(vi, vm)
 })
 
-test_that("collinearity inflates the 'inverse' variance and the VIF", {
+test_that("collinearity inflates the 'inv' variance and the VIF", {
   set.seed(2)
   n  <- 800
   e1 <- rnorm(n); e2 <- rnorm(n)
@@ -22,14 +22,28 @@ test_that("collinearity inflates the 'inverse' variance and the VIF", {
   x2 <- 0.9 * e1 + sqrt(1 - 0.81) * e2          # stationary, correlated with x1
   y  <- x1 - 0.5 * x2 + rnorm(n)
   fi <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 15,
-                overlap = FALSE, vcov = "inverse")
+                overlap = FALSE, variance = "inv")
   fm <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 15,
-                overlap = FALSE, vcov = "marginal")
+                overlap = FALSE, variance = "marginal")
 
   expect_true(mean(fi$VIF, na.rm = TRUE) > 1)
   expect_true(stats::median(fi$VDFA / fm$VDFA, na.rm = TRUE) > 1)
   expect_true(all(fi$VIF   >= 1 - 1e-8, na.rm = TRUE))
   expect_true(all(fi$R2adj <= 1 + 1e-8, na.rm = TRUE))
+})
+
+test_that("inv_corrected scales the inverse variance by the memory factor", {
+  set.seed(20)
+  n  <- 1000
+  x1 <- rnorm(n); x2 <- rnorm(n)
+  y  <- x1 - 0.5 * x2 + rnorm(n)
+  fi <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 20,
+                overlap = FALSE, variance = "inv")
+  fc <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 20,
+                overlap = FALSE, variance = "inv_corrected")
+  expect_equal(fc$VDFA, fi$VDFA * fc$kappa_factor[1])     # M4.2': inv x kappa(H)
+  expect_true(fc$kappa_factor[1] > 0 && fc$kappa_factor[1] <= 1)
+  expect_true(is.finite(fc$H_resid))
 })
 
 test_that("fracreg.diag returns scale-wise diagnostics", {
@@ -42,19 +56,29 @@ test_that("fracreg.diag returns scale-wise diagnostics", {
   expect_equal(nrow(dg), 15)
 })
 
-test_that("vcov='HC' runs and changes only the variance", {
+test_that("variance = 'hc' runs and changes only the variance", {
   set.seed(5)
   n  <- 800
   x1 <- rnorm(n); x2 <- rnorm(n)
   y  <- x1 - 0.5 * x2 + rnorm(n)
   fi <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 12,
-                overlap = FALSE, vcov = "inverse")
+                overlap = FALSE, variance = "inv")
   fh <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 12,
-                overlap = FALSE, vcov = "HC")
+                overlap = FALSE, variance = "hc")
   expect_equal(fh$BDFA, fi$BDFA)                      # HC leaves the coefficients unchanged
   expect_true(all(is.finite(fh$VDFA)))
   expect_true(all(fh$VDFA >= 0))
   expect_false(isTRUE(all.equal(fh$VDFA, fi$VDFA)))   # but the variance differs
+})
+
+test_that("overlap = TRUE returns point estimates only (variance = 'none')", {
+  set.seed(21)
+  n <- 600
+  d <- cbind(y = rnorm(n), x = rnorm(n))
+  expect_message(fo <- fracreg(d, dpo = 1, int = TRUE, np = 15, overlap = TRUE),
+                 "overlap")
+  expect_identical(fo$variance_method, "none")
+  expect_true(all(is.na(fo$UCIB)))
 })
 
 test_that("the analytic variance uses the box count T_s = floor(N/s)", {
@@ -82,14 +106,18 @@ test_that("too few boxes (T_s <= k) yield NA limits and a warning", {
   expect_true(any(is.na(f$VDFA)))                     # the largest scales are NA
 })
 
-test_that("fracreg reports the DFA exponent and warns under strong memory", {
+test_that("a strong-memory error (H > 3/4) triggers the warning and reports H_resid", {
   set.seed(10)
-  n  <- 1500
-  rw <- data.frame(y = cumsum(rnorm(n)), x = cumsum(rnorm(n)))  # H >> 3/4 apparent
-  expect_warning(fracreg(rw, dpo = 1, int = TRUE, np = 20, overlap = FALSE),
-                 "Hermite|3/4|DFA exponent")
-  fr <- suppressWarnings(fracreg(rw, dpo = 1, int = TRUE, np = 20, overlap = FALSE))
-  expect_true("alpha" %in% names(fr))
+  n <- 800
+  d <- data.frame(y = rnorm(n), x = rnorm(n))
+  # supply H_eps directly so the regime is deterministic
+  expect_warning(fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE, H_eps = 0.85),
+                 "Hermite|3/4|H_resid")
+  fr <- suppressWarnings(
+    fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE, H_eps = 0.85))
+  expect_equal(fr$H_resid, 0.85)
+  expect_equal(unname(fr$kappa_factor[1]), (2 * 0.85 + 1)^2 / 21)
+  expect_true(all(c("alpha", "H_resid", "kappa_factor") %in% names(fr)))
   expect_length(fr$alpha, 2)
 })
 
@@ -126,9 +154,9 @@ test_that("fracreg.WB runs and i.i.d. weights reproduce the HC variance", {
   expect_error(fracreg.WB(d, weights = "bogus"))
 })
 
-test_that("fracreg validates vcov and abs", {
+test_that("fracreg validates variance and abs", {
   set.seed(4)
   d <- cbind(rnorm(300), rnorm(300))
-  expect_error(fracreg(d, dpo = 1, int = TRUE, np = 15, vcov = "bogus"))
+  expect_error(fracreg(d, dpo = 1, int = TRUE, np = 15, variance = "bogus"))
   expect_error(fracreg(d, dpo = 1, int = TRUE, np = 15, abs = "yes"), "abs")
 })

@@ -6,11 +6,12 @@
 \usage{
 fracreg(
   data,
-  dpo,
-  int,
+  dpo = 1,
+  int = TRUE,
   np = 91,
-  overlap = TRUE,
-  vcov = c("inverse", "marginal", "HC"),
+  overlap = FALSE,
+  variance = c("inv_corrected", "inv", "marginal", "hc", "none"),
+  H_eps = NULL,
   abs = FALSE
 )
 }
@@ -24,14 +25,23 @@ response and the remaining columns are the predictors.}
 
 \item{np}{number of point scales.}
 
-\item{overlap}{logical. If TRUE overlapping windows are applied.}
+\item{overlap}{logical. If TRUE overlapping windows are used. Defaults to
+FALSE: score-based inference treats the boxes as sampling units and requires
+them disjoint. With \code{overlap = TRUE} only point estimates are returned
+(\code{variance = "none"}).}
 
-\item{vcov}{coefficient-variance estimator: \code{"inverse"} (default; full
-\eqn{F_{XX}(s)^{-1}}, Tilfani et al. 2022), \code{"marginal"} (legacy
-\eqn{1/F^2_{X_j}(s)}, Shen 2015), or \code{"HC"} (experimental
-heteroscedasticity-consistent sandwich built from the per-box detrended
-moment scores; \code{overlap = FALSE} is recommended and the finite-sample
-normalisation is still being calibrated).}
+\item{variance}{coefficient-variance estimator:
+\code{"inv_corrected"} (default) the memory-corrected inverse form
+\eqn{F^2_\varepsilon(s)[F_{XX}(s)^{-1}]_{jj}/(T_s-k)\cdot(2\widehat H+1)^2/21}
+(Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
+(Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
+form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
+heteroscedasticity-consistent sandwich; or \code{"none"} for point estimates
+only.}
+
+\item{H_eps}{optional numeric. A pre-computed DFA exponent of the regression
+error to use in the memory correction; if \code{NULL} (default) it is
+estimated from the OLS residual.}
 
 \item{abs}{logical. If TRUE the absolute detrended covariance is used in the
 cross-correlation step (more robust to outliers).}
@@ -43,8 +53,11 @@ A list with, among others: scale \code{s}, detrended fluctuation
   variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
   confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
   \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
-  \code{kappa} and adjusted \code{R2adj}, and the per-series DFA exponent
-  \code{alpha} (a long-memory proxy).
+  \code{kappa} and adjusted \code{R2adj}, the per-series DFA exponent
+  \code{alpha}, the residual DFA exponent \code{H_resid} and memory factor
+  \code{kappa_factor} used in the correction, the chosen
+  \code{variance_method}, the effective degrees of freedom \code{df_eff} and
+  the box counts \code{Ts}.
 }
 \description{
 Calculates the scale-dependent (DFA-based) multiple linear regression: the
@@ -58,8 +71,12 @@ The variance of the scale-dependent coefficients follows Tilfani et al.
 covariance matrix of the predictors, consistent with how the coefficients
 themselves are estimated. Under collinearity this differs from the legacy
 "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
-the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
-reproduce the legacy behaviour.
+the two coincide for orthogonal predictors. The default
+\code{variance = "inv_corrected"} multiplies the inverse form by the
+memory-correction factor \eqn{(2\widehat H + 1)^2 / 21} (Barreto et al. 2026,
+Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of the OLS residual,
+restoring nominal coverage under polynomial detrending; \code{variance = "inv"}
+omits the factor and \code{variance = "marginal"} reproduces the legacy form.
 
 The variance is normalised by the residual degrees of freedom
 \eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of

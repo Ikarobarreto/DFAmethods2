@@ -381,9 +381,12 @@ the coefficient of determination, the DMC, confidence limits and
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fracreg.html">fracreg</a></span><span class="op">(</span><span class="va">dat</span>, dpo <span class="op">=</span> <span class="fl">1</span>, int <span class="op">=</span> <span class="cn">TRUE</span>, np <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fr</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "s"       "F"       "DCCA"    "DPCCA"   "BDFA"    "BSDFA"   "UDFA"   </span></span>
-<span><span class="co">#&gt;  [8] "VDFA"    "VDFA2"   "DMC2"    "R2DFA"   "UCIB"    "LCIB"    "p.value"</span></span>
-<span><span class="co">#&gt; [15] "TC"      "VIF"     "kappa"   "R2adj"   "alpha"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "s"               "F"               "DCCA"            "DPCCA"          </span></span>
+<span><span class="co">#&gt;  [5] "BDFA"            "BSDFA"           "UDFA"            "VDFA"           </span></span>
+<span><span class="co">#&gt;  [9] "VDFA2"           "DMC2"            "R2DFA"           "UCIB"           </span></span>
+<span><span class="co">#&gt; [13] "LCIB"            "p.value"         "TC"              "VIF"            </span></span>
+<span><span class="co">#&gt; [17] "kappa"           "R2adj"           "alpha"           "H_resid"        </span></span>
+<span><span class="co">#&gt; [21] "kappa_factor"    "variance_method" "df_eff"          "Ts"</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="scale-wise-effect-sizes">Scale-wise effect sizes<a class="anchor" aria-label="anchor" href="#scale-wise-effect-sizes"></a>
 </h3>
@@ -425,21 +428,30 @@ at scale
 <div class="section level3">
 <h3 id="the-coefficient-variance">The coefficient variance<a class="anchor" aria-label="anchor" href="#the-coefficient-variance"></a>
 </h3>
-<p>By default (<code>vcov = "inverse"</code>) the variance is built from
-the <strong>full inverse</strong> of the predictors’ detrended
-covariance matrix,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>var</mo><mspace width="-0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msub><mi>β</mi><mi>j</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>F</mi><mi>ε</mi><mn>2</mn></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">[</mo><msub><mi>𝐅</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><msub><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">]</mo><mrow><mi>j</mi><mi>j</mi></mrow></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\operatorname{var}\!\big(\beta_j(s)\big)
-   = F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj},
-</annotation></semantics></math> the very matrix that produces
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝛃</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{\beta}(s)</annotation></semantics></math><span class="citation">(Tilfani et al. 2022)</span>. The legacy
-“marginal” variance
+<p>By default (<code>variance = "inv_corrected"</code>) the variance is
+built from the <strong>full inverse</strong> of the predictors’
+detrended covariance matrix, normalised by the box count
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>T</mi><mi>s</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">⌊</mo><mi>N</mi><mi>/</mi><mi>s</mi><mo stretchy="false" form="postfix">⌋</mo></mrow><annotation encoding="application/x-tex">T_s = \lfloor N/s\rfloor</annotation></semantics></math>
+minus the number of predictors
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>,
+and scaled by a memory-correction factor,
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>var</mo><mspace width="-0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msub><mover><mi>β</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><msubsup><mi>F</mi><mi>ε</mi><mn>2</mn></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">[</mo><msub><mi>𝐅</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><msub><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">]</mo><mrow><mi>j</mi><mi>j</mi></mrow></msub></mrow><mrow><msub><mi>T</mi><mi>s</mi></msub><mo>−</mo><mi>k</mi></mrow></mfrac><mo>⋅</mo><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mover><mi>H</mi><mo accent="true">̂</mo></mover><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mn>21</mn></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\operatorname{var}\!\big(\hat\beta_j(s)\big)
+   = \frac{F^2_{\varepsilon}(s)\,\big[\mathbf{F}_{XX}(s)^{-1}\big]_{jj}}{T_s - k}
+   \cdot \frac{(2\widehat H + 1)^2}{21}.
+</annotation></semantics></math> The inverse is the matrix that produces
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝛃</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{\beta}(s)</annotation></semantics></math><span class="citation">(Tilfani et al. 2022)</span>; the factor depends
+on the DFA exponent
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>H</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat H</annotation></semantics></math>
+of the regression error (estimated from the OLS residual) and restores
+nominal coverage under polynomial detrending.
+<code>variance = "inv"</code> drops the factor, and the legacy
+<code>variance = "marginal"</code> form
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>F</mi><mi>ε</mi><mn>2</mn></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><msubsup><mi>F</mi><msub><mi>X</mi><mi>j</mi></msub><mn>2</mn></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>s</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F^2_{\varepsilon}(s)/F^2_{X_j}(s)</annotation></semantics></math>
 ignores the off-diagonal structure and <strong>under-covers when the
-covariates are correlated</strong>; the two agree only for orthogonal
-predictors. Pass <code>vcov = "marginal"</code> to recover it.</p>
+covariates are correlated</strong>.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fracreg.html">fracreg</a></span><span class="op">(</span><span class="va">dat</span>, dpo <span class="op">=</span> <span class="fl">1</span>, int <span class="op">=</span> <span class="cn">TRUE</span>, np <span class="op">=</span> <span class="fl">40</span><span class="op">)</span>   <span class="co"># vcov = "inverse" (default)</span></span>
+<code class="sourceCode R"><span><span class="va">fr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fracreg.html">fracreg</a></span><span class="op">(</span><span class="va">dat</span>, dpo <span class="op">=</span> <span class="fl">1</span>, int <span class="op">=</span> <span class="cn">TRUE</span>, np <span class="op">=</span> <span class="fl">40</span><span class="op">)</span>   <span class="co"># variance = "inv_corrected" (default)</span></span>
 <span><span class="va">b</span>  <span class="op">&lt;-</span> <span class="va">fr</span><span class="op">$</span><span class="va">BDFA</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span>                               <span class="co"># x2 coefficient</span></span>
 <span><span class="va">lo</span> <span class="op">&lt;-</span> <span class="va">fr</span><span class="op">$</span><span class="va">LCIB</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span>; <span class="va">hi</span> <span class="op">&lt;-</span> <span class="va">fr</span><span class="op">$</span><span class="va">UCIB</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fr</span><span class="op">$</span><span class="va">s</span>, <span class="va">b</span>, type <span class="op">=</span> <span class="st">"n"</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">lo</span>, <span class="va">hi</span><span class="op">)</span>,</span>
@@ -465,12 +477,12 @@ the adjusted coefficient of determination <code>R2adj</code> <span class="citati
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
 <span><span class="co">#&gt;       s VIF_x2 VIF_x3 kappa R2adj</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    10   1.00   1.00  1.07 0.350</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>    11   1.00   1.00  1.07 0.344</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>    12   1.00   1.00  1.07 0.339</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>    13   1.00   1.00  1.06 0.334</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>    14   1.00   1.00  1.06 0.330</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>    15   1.00   1.00  1.05 0.325</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    10   1.00   1.00  1.07 0.340</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>    11   1.00   1.00  1.07 0.333</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>    12   1.00   1.00  1.07 0.327</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>    13   1.00   1.00  1.06 0.321</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>    14   1.00   1.00  1.06 0.315</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>    15   1.00   1.00  1.05 0.309</span></span></code></pre></div>
 <p>Here the two drivers are independent, so the <code>VIF</code>s sit at
 1 and <code>kappa</code> near 1; a <code>VIF</code> rising well above 1
 at some scales would flag scale-localised collinearity that inflates the
@@ -486,7 +498,7 @@ built on the per-box detrended moments (so the DFA itself is never
 recomputed):</p>
 <ul>
 <li>
-<code>vcov = "HC"</code> — a heteroscedasticity-consistent
+<code>variance = "hc"</code> — a heteroscedasticity-consistent
 (sandwich) variance,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐅</mi><mrow><mi>X</mi><mi>X</mi></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><mi>𝛀</mi><mspace width="0.167em"></mspace><msubsup><mi>𝐅</mi><mrow><mi>X</mi><mi>X</mi></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{F}_{XX}^{-1}\boldsymbol{\Omega}\,\mathbf{F}_{XX}^{-1}</annotation></semantics></math>
 with
@@ -506,7 +518,7 @@ dependence across boxes); <code>"rademacher"</code> and
 the i.i.d. version, which reproduces the HC variance exactly.</li>
 </ul>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fr_hc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fracreg.html">fracreg</a></span><span class="op">(</span><span class="va">dat</span>, dpo <span class="op">=</span> <span class="fl">1</span>, int <span class="op">=</span> <span class="cn">TRUE</span>, np <span class="op">=</span> <span class="fl">40</span>, overlap <span class="op">=</span> <span class="cn">FALSE</span>, vcov <span class="op">=</span> <span class="st">"HC"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">fr_hc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fracreg.html">fracreg</a></span><span class="op">(</span><span class="va">dat</span>, dpo <span class="op">=</span> <span class="fl">1</span>, int <span class="op">=</span> <span class="cn">TRUE</span>, np <span class="op">=</span> <span class="fl">40</span>, overlap <span class="op">=</span> <span class="cn">FALSE</span>, variance <span class="op">=</span> <span class="st">"hc"</span><span class="op">)</span></span>
 <span><span class="co"># HC standard error of the x2 coefficient (first few scales)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">fr_hc</span><span class="op">$</span><span class="va">VDFA</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.062 0.071 0.083 0.099 0.078 0.063</span></span></code></pre></div>
@@ -588,7 +600,7 @@ defaults span box sizes from 10 to one fifth of the series length.</li>
 <code>int = FALSE</code> when the series are already integrated
 (random-walk-like).</li>
 <li>For confidence intervals, keep the default
-<code>vcov = "inverse"</code>; switch to the wild bootstrap
+<code>variance = "inv_corrected"</code>; switch to the wild bootstrap
 (<code><a href="../reference/fracreg.WB.html">fracreg.WB()</a></code>) when you suspect heteroscedasticity or
 dependence between boxes, and read the
 <code>VIF</code>/<code>kappa</code> diagnostics to spot scales where
