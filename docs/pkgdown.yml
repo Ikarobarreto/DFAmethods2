@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   DFATools: DFATools.html
-last_built: 2026-06-09T15:32Z
+last_built: 2026-06-09T17:50Z
 urls:
   reference: https://ikarobarreto.github.io/DFATools/reference
   article: https://ikarobarreto.github.io/DFATools/articles

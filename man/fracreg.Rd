@@ -12,6 +12,7 @@ fracreg(
   overlap = FALSE,
   variance = c("inv_corrected", "inv", "marginal", "hc", "none"),
   H_eps = NULL,
+  min_boxes = 15,
   abs = FALSE
 )
 }
@@ -42,6 +43,12 @@ only.}
 \item{H_eps}{optional numeric. A pre-computed DFA exponent of the regression
 error to use in the memory correction; if \code{NULL} (default) it is
 estimated from the OLS residual.}
+
+\item{min_boxes}{minimum number of non-overlapping boxes
+\eqn{T_s = \lfloor N/s\rfloor} required for inference at a scale (default
+15). Scales with \eqn{T_s < } \code{min_boxes} return \code{NA} standard
+errors, confidence limits and p-values, with a single warning listing them.
+A warning is also issued when \eqn{N < 500} (Likens et al. 2019).}
 
 \item{abs}{logical. If TRUE the absolute detrended covariance is used in the
 cross-correlation step (more robust to outliers).}

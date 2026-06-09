@@ -47,6 +47,15 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   wild bootstrap (`fracreg.WB()`) is preferred.
 * `fracreg()` now reports **two-sided** p-values (`$p.value`) for the
   scale-dependent coefficients, `2 * (1 - pt(|t|, T_s - k))`.
+* New `min_boxes` argument (default 15) in `fracreg()` and `fracreg.WB()`:
+  scales whose non-overlapping box count `T_s = floor(N/s)` falls below this
+  floor return `NA` standard errors, confidence limits and p-values, listed in
+  a single warning. A separate warning is issued when `N < 500`
+  (Likens et al. 2019).
+* `fracreg.WB()` no longer accepts an `overlap` argument; score-based inference
+  requires disjoint boxes, so the function is non-overlapping by construction
+  (paper M8). Calls that pass `overlap = ...` will fail with the standard
+  "unused argument" error.
 * `vcov = "HC"` is an experimental heteroscedasticity-consistent (sandwich)
   estimator built from per-box detrended-moment scores; `overlap = FALSE` is
   recommended.

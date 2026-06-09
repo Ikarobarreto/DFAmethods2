@@ -143,6 +143,11 @@ utils::globalVariables(c("s", "rho"))
 #' @param H_eps optional numeric. A pre-computed DFA exponent of the regression
 #'   error to use in the memory correction; if \code{NULL} (default) it is
 #'   estimated from the OLS residual.
+#' @param min_boxes minimum number of non-overlapping boxes
+#'   \eqn{T_s = \lfloor N/s\rfloor} required for inference at a scale (default
+#'   15). Scales with \eqn{T_s < } \code{min_boxes} return \code{NA} standard
+#'   errors, confidence limits and p-values, with a single warning listing them.
+#'   A warning is also issued when \eqn{N < 500} (Likens et al. 2019).
 #' @param abs logical. If TRUE the absolute detrended covariance is used in the
 #'   cross-correlation step (more robust to outliers).
 #' @return A list with, among others: scale \code{s}, detrended fluctuation
@@ -194,7 +199,7 @@ utils::globalVariables(c("s", "rho"))
 
 fracreg<-function(data,dpo=1,int=TRUE,np=91,overlap=FALSE,
                   variance=c("inv_corrected","inv","marginal","hc","none"),
-                  H_eps=NULL,abs=FALSE){
+                  H_eps=NULL,min_boxes=15,abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
 	variance<-match.arg(variance)
@@ -202,6 +207,11 @@ fracreg<-function(data,dpo=1,int=TRUE,np=91,overlap=FALSE,
 		stop("fracreg(): `abs` must be a single TRUE or FALSE.", call.=FALSE)
 	if(!is.null(H_eps)&&(!is.numeric(H_eps)||length(H_eps)!=1L))
 		stop("fracreg(): `H_eps` must be NULL or a single number.", call.=FALSE)
+	if(!is.numeric(min_boxes)||length(min_boxes)!=1L||!is.finite(min_boxes)||min_boxes<1)
+		stop("fracreg(): `min_boxes` must be a single positive number.", call.=FALSE)
+	if(variance!="none"&&nrow(data)<500L)
+		warning("fracreg(): N = ",nrow(data)," < 500; DFA-based inference may be ",
+			"unreliable (Likens et al., 2019).",call.=FALSE)
 	# Score-based inference treats the boxes as sampling units and requires them
 	# disjoint; overlapping windows invalidate the standard errors (paper M8).
 	if(isTRUE(overlap)&&variance!="none"){
@@ -372,14 +382,19 @@ if(variance=="hc"){
 		vn[1,,kk]<-diag(Vh)
 	}
 }
+# Score-based inference requires both df > 0 and enough non-overlapping boxes
+# (min_boxes). The two gates are combined into ok_scale[k]; suppressed scales
+# return NA on SE, CI and p, and are reported in a single warning below.
+Tsv_loop<-floor(size/sn); ok_scale<-(Tsv_loop>=min_boxes)&(Tsv_loop>(nc-1))
+if(variance=="none") ok_scale[]<-FALSE
 for(k in 1:np){
 	for(i in 1:(nc-1)){
-	dfk<-if(variance=="none") 0 else floor(size/sn[[k]])-(nc-1)
-	vn[1,i,k]<-ifelse(dfk>0,vn[1,i,k],NA)
-	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
-	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
-	tn [i,1,k]<-as.matrix(2*(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(dfk>0,dfk,NA))))
-	tnc[i,1,k]<-as.matrix(qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k]))
+	dfk<-Tsv_loop[k]-(nc-1)
+	vn[1,i,k]<-ifelse(ok_scale[k],vn[1,i,k],NA)
+	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=ifelse(ok_scale[k],dfk,NA))*sqrt(vn[1,i,k])
+	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=ifelse(ok_scale[k],dfk,NA))*sqrt(vn[1,i,k])
+	tn [i,1,k]<-as.matrix(2*(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(ok_scale[k],dfk,NA))))
+	tnc[i,1,k]<-as.matrix(qt(0.975,df=ifelse(ok_scale[k],dfk,NA))*sqrt(vn[1,i,k]))
 	}}
 
 	# Per-series DFA exponents (informative). The OLS-residual exponent H_resid
@@ -392,10 +407,18 @@ for(k in 1:np){
 			" exceeds 3/4 (Hermite-Rosenblatt threshold); the analytic interval can ",
 			"under-cover under strong long-range dependence. Prefer ",
 			"fracreg.WB(..., weights = 'dependent').",call.=FALSE)
-	if(variance!="none"&&any(floor(size/sn)-(nc-1)<=0,na.rm=TRUE))
-		warning("fracreg(): some scale(s) have T_s = floor(N/s) not exceeding the ",
-			"number of predictors; their standard errors, confidence limits and ",
-			"p-values are returned as NA.",call.=FALSE)
+	if(variance!="none"){
+		few_idx<-which(Tsv_loop<min_boxes|Tsv_loop<=nc-1)
+		if(length(few_idx)){
+			few_s<-sn[few_idx]
+			lst<-if(length(few_s)>6) paste(c(utils::head(few_s,5),"..."),collapse=", ") else
+				paste(few_s,collapse=", ")
+			warning("fracreg(): scales {",lst,"} have fewer than min_boxes = ",min_boxes,
+				" non-overlapping boxes (T_s = floor(N/s)); their standard errors and ",
+				"intervals were set to NA. Reduce the maximum scale or increase N.",
+				call.=FALSE)
+		}
+	}
 	Tsv<-floor(size/sn)                          # non-overlapping box count per scale
 	df_eff<-Tsv-(nc-1)                           # residual degrees of freedom T_s - k
 	kappa_factor_v<-rep(kappa_factor,np)         # memory factor (constant across s)
@@ -556,8 +579,11 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
 #' @param dpo detrending polynomial order.
 #' @param int logical. If TRUE the integration process is applied.
 #' @param np number of point scales.
-#' @param overlap logical. If TRUE overlapping windows are used (non-overlapping
-#'   boxes, the default, are recommended for resampling).
+#' @param min_boxes minimum number of non-overlapping boxes \eqn{T_s =
+#'   \lfloor N/s\rfloor} required for inference; at scales below this floor the
+#'   bootstrap is skipped and the interval is returned as \code{NA} (default 15).
+#'   Score-based inference treats the boxes as disjoint sampling units;
+#'   \code{fracreg.WB()} therefore takes no \code{overlap} argument by design.
 #' @param abs logical. If TRUE the absolute detrended covariance is used.
 #' @return A tibble with the scale \code{s} and, per predictor, the estimate
 #'   (\code{beta_*}), the lower/upper interval bounds (\code{lower_*},
@@ -585,22 +611,31 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
 #' @export
 fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "mammen"),
                        bandwidth = NULL, dpo = 1, int = TRUE, np = 91,
-                       overlap = FALSE, abs = FALSE) {
+                       min_boxes = 15, abs = FALSE) {
   weights <- match.arg(weights)
-  .check_common(np, dpo, int, overlap, "fracreg.WB")
+  # Score-based inference treats the boxes as disjoint sampling units;
+  # fracreg.WB does not accept an `overlap` argument by design (paper M8).
+  .check_common(np, dpo, int, overlap = FALSE, "fracreg.WB")
   .check_matrix(data, 2, "fracreg.WB")
   .check_B(B, "fracreg.WB")
+  if (!is.numeric(min_boxes) || length(min_boxes) != 1L ||
+      !is.finite(min_boxes) || min_boxes < 1)
+    stop("fracreg.WB(): `min_boxes` must be a single positive number.", call. = FALSE)
+  if (nrow(data) < 500L)
+    warning("fracreg.WB(): N = ", nrow(data), " < 500; DFA-based inference may be ",
+            "unreliable (Likens et al., 2019).", call. = FALSE)
   data <- as.matrix(data)
   nc <- ncol(data); k <- nc - 1L
   cn <- colnames(data); if (is.null(cn)) cn <- paste0("x", seq_len(nc))
   pred <- cn[2:nc]
 
-  pb <- .fracreg_perbox(data, dpo = dpo, int = int, np = np, overlap = overlap, abs = abs)
+  pb <- .fracreg_perbox(data, dpo = dpo, int = int, np = np, overlap = FALSE, abs = abs)
   s <- pb$scales
   beta <- lower <- upper <- pval <- matrix(NA_real_, np, k)
   for (ki in seq_len(np)) {
     ps <- pb$perscale[[ki]]; Ts <- ps$Ts
     beta[ki, ] <- ps$beta
+    if (Ts < min_boxes) next                                  # too few boxes -> NA SE/CI/p
     W  <- .wb_weights(Ts, B, weights, bandwidth)              # Ts x B
     BS <- ps$beta + ps$Fxx_inv %*% (crossprod(ps$scores, W) / Ts)   # k x B
     for (j in seq_len(k)) {
@@ -608,6 +643,14 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
       lower[ki, j] <- q[1]; upper[ki, j] <- q[2]
       pval[ki, j]  <- 2 * min(mean(BS[j, ] <= 0), mean(BS[j, ] >= 0))
     }
+  }
+  few_idx <- which(vapply(pb$perscale, function(z) z$Ts < min_boxes, logical(1L)))
+  if (length(few_idx)) {
+    lst <- if (length(few_idx) > 6) paste(c(utils::head(s[few_idx], 5), "..."), collapse = ", ")
+           else paste(s[few_idx], collapse = ", ")
+    warning("fracreg.WB(): scales {", lst, "} have fewer than min_boxes = ", min_boxes,
+            " non-overlapping boxes; their standard errors and intervals were set ",
+            "to NA. Reduce the maximum scale or increase N.", call. = FALSE)
   }
   out <- data.frame(s = s)
   for (j in seq_len(k)) {

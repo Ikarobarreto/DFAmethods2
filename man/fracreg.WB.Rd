@@ -12,7 +12,7 @@ fracreg.WB(
   dpo = 1,
   int = TRUE,
   np = 91,
-  overlap = FALSE,
+  min_boxes = 15,
   abs = FALSE
 )
 }
@@ -34,8 +34,11 @@ predictors.}
 
 \item{np}{number of point scales.}
 
-\item{overlap}{logical. If TRUE overlapping windows are used (non-overlapping
-boxes, the default, are recommended for resampling).}
+\item{min_boxes}{minimum number of non-overlapping boxes \eqn{T_s =
+\lfloor N/s\rfloor} required for inference; at scales below this floor the
+bootstrap is skipped and the interval is returned as \code{NA} (default 15).
+Score-based inference treats the boxes as disjoint sampling units;
+\code{fracreg.WB()} therefore takes no \code{overlap} argument by design.}
 
 \item{abs}{logical. If TRUE the absolute detrended covariance is used.}
 }

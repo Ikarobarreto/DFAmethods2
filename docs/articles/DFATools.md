@@ -338,7 +338,7 @@ covariates are correlated**.
 fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # variance = "inv_corrected" (default)
 b  <- fr$BDFA[1, 1, ]                               # x2 coefficient
 lo <- fr$LCIB[1, 1, ]; hi <- fr$UCIB[1, 1, ]
-plot(fr$s, b, type = "n", ylim = range(lo, hi),
+plot(fr$s, b, type = "n", ylim = range(lo, hi, na.rm = TRUE),
      xlab = "scale s", ylab = expression(beta[x2](s)),
      main = "x2 coefficient with 95% confidence band")
 polygon(c(fr$s, rev(fr$s)), c(lo, rev(hi)), col = "grey85", border = NA)
@@ -409,7 +409,7 @@ round(sqrt(fr_hc$VDFA[1, 1, ])[1:6], 3)
 
 ``` r
 wb <- fracreg.WB(dat, B = 199, weights = "dependent", np = 20)
-plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2),
+plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2, na.rm = TRUE),
      xlab = "scale s", ylab = expression(beta[x2](s)),
      main = "x2 coefficient with wild-bootstrap 95% band")
 polygon(c(wb$s, rev(wb$s)), c(wb$lower_x2, rev(wb$upper_x2)),
@@ -453,12 +453,12 @@ head(ps)
 #> # A tibble: 6 × 7
 #>    bet1   bet2  slci1  slci2 suci1 suci2     s
 #>   <dbl>  <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
-#> 1 0.577 -0.441 -0.463 -0.429 0.493 0.420    10
-#> 2 0.568 -0.436 -0.494 -0.448 0.515 0.445    11
-#> 3 0.561 -0.432 -0.521 -0.465 0.539 0.468    12
-#> 4 0.555 -0.428 -0.545 -0.479 0.563 0.490    13
-#> 5 0.550 -0.424 -0.567 -0.493 0.568 0.510    14
-#> 6 0.545 -0.420 -0.586 -0.506 0.569 0.529    15
+#> 1 0.577 -0.441 -0.307 -0.418 0.673 0.272    10
+#> 2 0.568 -0.436 -0.315 -0.446 0.703 0.307    11
+#> 3 0.561 -0.432 -0.316 -0.468 0.719 0.325    12
+#> 4 0.555 -0.428 -0.337 -0.486 0.733 0.348    13
+#> 5 0.550 -0.424 -0.356 -0.500 0.744 0.387    14
+#> 6 0.545 -0.420 -0.372 -0.511 0.758 0.420    15
 ```
 
 ``` r

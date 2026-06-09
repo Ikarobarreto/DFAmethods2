@@ -264,7 +264,7 @@ off-diagonal structure and **under-covers when the covariates are correlated**.
 fr <- fracreg(dat, dpo = 1, int = TRUE, np = 40)   # variance = "inv_corrected" (default)
 b  <- fr$BDFA[1, 1, ]                               # x2 coefficient
 lo <- fr$LCIB[1, 1, ]; hi <- fr$UCIB[1, 1, ]
-plot(fr$s, b, type = "n", ylim = range(lo, hi),
+plot(fr$s, b, type = "n", ylim = range(lo, hi, na.rm = TRUE),
      xlab = "scale s", ylab = expression(beta[x2](s)),
      main = "x2 coefficient with 95% confidence band")
 polygon(c(fr$s, rev(fr$s)), c(lo, rev(hi)), col = "grey85", border = NA)
@@ -313,7 +313,7 @@ round(sqrt(fr_hc$VDFA[1, 1, ])[1:6], 3)
 
 ```{r wb, fig.alt = "x2 coefficient with wild-bootstrap confidence band"}
 wb <- fracreg.WB(dat, B = 199, weights = "dependent", np = 20)
-plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2),
+plot(wb$s, wb$beta_x2, type = "n", ylim = range(wb$lower_x2, wb$upper_x2, na.rm = TRUE),
      xlab = "scale s", ylab = expression(beta[x2](s)),
      main = "x2 coefficient with wild-bootstrap 95% band")
 polygon(c(wb$s, rev(wb$s)), c(wb$lower_x2, rev(wb$upper_x2)),

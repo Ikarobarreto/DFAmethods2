@@ -15,6 +15,7 @@ fracreg(
   overlap = FALSE,
   variance = c("inv_corrected", "inv", "marginal", "hc", "none"),
   H_eps = NULL,
+  min_boxes = 15,
   abs = FALSE
 )
 ```
@@ -61,6 +62,14 @@ fracreg(
   optional numeric. A pre-computed DFA exponent of the regression error
   to use in the memory correction; if `NULL` (default) it is estimated
   from the OLS residual.
+
+- min_boxes:
+
+  minimum number of non-overlapping boxes \\T_s = \lfloor N/s\rfloor\\
+  required for inference at a scale (default 15). Scales with \\T_s \<
+  \\ `min_boxes` return `NA` standard errors, confidence limits and
+  p-values, with a single warning listing them. A warning is also issued
+  when \\N \< 500\\ (Likens et al. 2019).
 
 - abs:
 
@@ -138,6 +147,8 @@ set.seed(1)
 x1 <- rnorm(400); x2 <- rnorm(400)        # stationary predictors
 d <- data.frame(y = 0.7 * x1 - 0.5 * x2 + rnorm(400), x1 = x1, x2 = x2)
 fit <- fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE)
+#> Warning: fracreg(): N = 400 < 500; DFA-based inference may be unreliable (Likens et al., 2019).
+#> Warning: fracreg(): scales {29, 32, 35, 39, 43, ...} have fewer than min_boxes = 15 non-overlapping boxes (T_s = floor(N/s)); their standard errors and intervals were set to NA. Reduce the maximum scale or increase N.
 round(fit$BDFA[, 1, 10], 2)               # coefficients at the 10th scale
 #> [1]  0.66 -0.34
 ```
