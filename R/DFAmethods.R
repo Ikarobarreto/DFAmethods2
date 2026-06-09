@@ -109,6 +109,16 @@ utils::globalVariables(c("s", "rho"))
 #' the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
 #' reproduce the legacy behaviour.
 #'
+#' The variance is normalised by the residual degrees of freedom
+#' \eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of
+#' non-overlapping boxes at scale \eqn{s} and \eqn{k} the number of predictors;
+#' the same \eqn{T_s - k} is the degrees of freedom of the \code{t} quantile.
+#' \eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
+#' \eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
+#' can under-cover under strong long-range dependence (estimated DFA exponent
+#' above \eqn{3/4}, the Hermite-Rosenblatt threshold); a warning is then issued
+#' and \code{\link{fracreg.WB}} (dependent wild bootstrap) should be preferred.
+#'
 #' @param data a matrix or data frame of time series; the first column is the
 #'   response and the remaining columns are the predictors.
 #' @param dpo detrending polynomial order.
@@ -128,8 +138,9 @@ utils::globalVariables(c("s", "rho"))
 #'   standardized betas \code{BSDFA}, residual variance \code{UDFA}, coefficient
 #'   variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
 #'   confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
-#'   \code{TC}, and the scale-wise diagnostics \code{VIF}, condition number
-#'   \code{kappa} and adjusted \code{R2adj}.
+#'   \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
+#'   \code{kappa} and adjusted \code{R2adj}, and the per-series DFA exponent
+#'   \code{alpha} (a long-memory proxy).
 #' @references
 #' Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
 #' Extending DFA-based multiple linear regression inference: application to
@@ -160,9 +171,10 @@ utils::globalVariables(c("s", "rho"))
 #' @importFrom magrittr "%>%"
 #' @examples
 #' set.seed(1)
-#' d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
-#'                 x2 = cumsum(rnorm(300)))
-#' fracreg(d, dpo = 1, int = TRUE, np = 20)
+#' x1 <- rnorm(400); x2 <- rnorm(400)        # stationary predictors
+#' d <- data.frame(y = 0.7 * x1 - 0.5 * x2 + rnorm(400), x1 = x1, x2 = x2)
+#' fit <- fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE)
+#' round(fit$BDFA[, 1, 10], 2)               # coefficients at the 10th scale
 #' @useDynLib DFATools, .registration=TRUE
 
 fracreg<-function(data,dpo,int,np=91,overlap=TRUE,vcov=c("inverse","marginal","HC"),abs=FALSE){
@@ -286,9 +298,9 @@ for(k in 1:np){
 	r2adj[1,1,k]<-1-((size-1)/(size-(nc-1)-1))*(1-dmc2[k])
 	for(i in (2:nc)){
 	  if(vcov=="inverse"){
-	    vn[,(i-1),k]<-F2eps*Mk[(i-1),(i-1)]*(1/(sn[[k]]-nc-2))
+	    vn[,(i-1),k]<-F2eps*Mk[(i-1),(i-1)]/(floor(size/sn[[k]])-(nc-1))
 	  }else{
-	    vn[,(i-1),k]<-F2eps*(1/fn[i,i,k])*(1/(sn[[k]]-nc-2))
+	    vn[,(i-1),k]<-F2eps*(1/fn[i,i,k])/(floor(size/sn[[k]])-(nc-1))
 	  }
 	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
 		}}
@@ -308,14 +320,32 @@ if(vcov=="HC"){
 }
 for(k in 1:np){
 	for(i in 1:(nc-1)){
-	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=(size/sn[[k]])-nc)*sqrt(vn[1,i,k])
-	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=(size/sn[[k]])-nc)*sqrt(vn[1,i,k])
-	tn [i,1,k]<-as.matrix(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=((size/sn[[k]])-nc)))
-	tnc[i,1,k]<-as.matrix(qt(0.975,df=((size/sn[[k]])-nc))*sqrt(vn[1,i,k]))
+	dfk<-floor(size/sn[[k]])-(nc-1); vn[1,i,k]<-ifelse(dfk>0,vn[1,i,k],NA)
+	uci[i,1,k]<-as.matrix(bn[i,1,k])+qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
+	lci[i,1,k]<-as.matrix(bn[i,1,k])-qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k])
+	tn [i,1,k]<-as.matrix(1-pt(abs(bn[i,1,k])/sqrt(vn[1,i,k]),df=ifelse(dfk>0,dfk,NA)))
+	tnc[i,1,k]<-as.matrix(qt(0.975,df=ifelse(dfk>0,dfk,NA))*sqrt(vn[1,i,k]))
 	}}
 
-fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj)
-names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj")
+	# Memory proxy: the DFA exponent (slope of log F(s) vs log s) of each series,
+	# reusing the fluctuation functions in fn. Under correct use of `int` this
+	# estimates the Hurst exponent H. The analytic interval (inverse/marginal) can
+	# under-cover under strong long-range dependence (H > 3/4, Hermite-Rosenblatt),
+	# where the dependent wild bootstrap (fracreg.WB) should be preferred.
+	alpha<-vapply(seq_len(nc),function(ii)
+		stats::coef(stats::lm(0.5*log(fn[ii,ii,])~log(sn)))[[2]],numeric(1))
+	names(alpha)<-colnames(data)
+	if(any(alpha>0.73,na.rm=TRUE))
+		warning("fracreg(): estimated DFA exponent above 0.73 (near or beyond the ",
+			"H = 3/4 Hermite-Rosenblatt threshold) in at least one series; the ",
+			"analytic confidence interval can under-cover under strong long-range ",
+			"dependence. Prefer fracreg.WB(..., weights = 'dependent').",call.=FALSE)
+	if(any(floor(size/sn)-(nc-1)<=0,na.rm=TRUE))
+		warning("fracreg(): some scale(s) have T_s = floor(N/s) not exceeding the ",
+			"number of predictors; their standard errors, confidence limits and ",
+			"p-values are returned as NA.",call.=FALSE)
+fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj,alpha)
+names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha")
 
 return(fracreg)
 }

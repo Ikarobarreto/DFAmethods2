@@ -28,6 +28,15 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   "marginal" form, `F2_eps(s) / F2_Xj(s)`, under-covers under multicollinearity;
   the two coincide for orthogonal predictors. `vcov = c("inverse", "marginal",
   "HC")` selects the estimator (default `"inverse"`).
+* The variance and the matching `t` quantile are normalised by the residual
+  degrees of freedom `T_s - k`, where `T_s = floor(N / s)` is the number of
+  non-overlapping boxes and `k` the number of predictors (the count of disjoint
+  boxes, regardless of `overlap`). Scales with `T_s <= k` return `NA` limits
+  with a warning.
+* `fracreg()` now returns the per-series DFA exponent `$alpha` and warns when it
+  exceeds 3/4 in any series, where the analytic interval can under-cover under
+  strong long-range dependence (Hermite-Rosenblatt threshold) and the dependent
+  wild bootstrap (`fracreg.WB()`) is preferred.
 * `vcov = "HC"` is an experimental heteroscedasticity-consistent (sandwich)
   estimator built from per-box detrended-moment scores; `overlap = FALSE` is
   recommended.

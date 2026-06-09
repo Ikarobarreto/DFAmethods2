@@ -42,8 +42,9 @@ A list with, among others: scale \code{s}, detrended fluctuation
   standardized betas \code{BSDFA}, residual variance \code{UDFA}, coefficient
   variance \code{VDFA}, multiple correlation \code{DMC2}, \code{R2DFA},
   confidence limits \code{UCIB}/\code{LCIB}, \code{p.value}, critical value
-  \code{TC}, and the scale-wise diagnostics \code{VIF}, condition number
-  \code{kappa} and adjusted \code{R2adj}.
+  \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
+  \code{kappa} and adjusted \code{R2adj}, and the per-series DFA exponent
+  \code{alpha} (a long-memory proxy).
 }
 \description{
 Calculates the scale-dependent (DFA-based) multiple linear regression: the
@@ -59,12 +60,23 @@ themselves are estimated. Under collinearity this differs from the legacy
 "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
 the two coincide for orthogonal predictors. Set \code{vcov = "marginal"} to
 reproduce the legacy behaviour.
+
+The variance is normalised by the residual degrees of freedom
+\eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of
+non-overlapping boxes at scale \eqn{s} and \eqn{k} the number of predictors;
+the same \eqn{T_s - k} is the degrees of freedom of the \code{t} quantile.
+\eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
+\eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
+can under-cover under strong long-range dependence (estimated DFA exponent
+above \eqn{3/4}, the Hermite-Rosenblatt threshold); a warning is then issued
+and \code{\link{fracreg.WB}} (dependent wild bootstrap) should be preferred.
 }
 \examples{
 set.seed(1)
-d <- data.frame(y = cumsum(rnorm(300)), x1 = cumsum(rnorm(300)),
-                x2 = cumsum(rnorm(300)))
-fracreg(d, dpo = 1, int = TRUE, np = 20)
+x1 <- rnorm(400); x2 <- rnorm(400)        # stationary predictors
+d <- data.frame(y = 0.7 * x1 - 0.5 * x2 + rnorm(400), x1 = x1, x2 = x2)
+fit <- fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE)
+round(fit$BDFA[, 1, 10], 2)               # coefficients at the 10th scale
 }
 \references{
 Barreto, I. D. C., Dore, L. H., Stosic, T. and Stosic, B. D. (2021).
