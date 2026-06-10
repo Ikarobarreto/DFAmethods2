@@ -1,15 +1,30 @@
-test_that("dfa returns a tibble of scales and fluctuations of matching length", {
+test_that("dfa() returns the Peng-convention quantities and a consistent alpha", {
   set.seed(1)
-  x <- cumsum(rnorm(500))
-  out <- dfa(x)
-
-  expect_s3_class(out, "data.frame")
-  expect_named(out, c("s", "F"))
-  expect_equal(length(out$s), length(out$F))
-  expect_true(any(is.finite(out$s)))
+  x <- cumsum(rnorm(2000))                       # random walk: alpha ~ 1.5
+  fy <- dfa(x, np = 30, overlap = FALSE)
+  expect_type(fy, "list")
+  expect_named(fy, c("s", "F", "F2", "alpha"))
+  expect_equal(sqrt(fy$F2), fy$F)                # F = sqrt(F2) by construction
+  pos <- fy$F > 0
+  slope <- unname(coef(stats::lm(log(fy$F[pos]) ~ log(fy$s[pos])))[[2]])
+  expect_equal(fy$alpha, slope)                  # alpha is the slope of log F
 })
 
-test_that("rhodcca coefficient column stays within [-1, 1]", {
+test_that("integrated random walk has DFA exponent near 1.5 (within sampling noise)", {
+  set.seed(2)
+  x <- cumsum(rnorm(4000))
+  fy <- dfa(x, np = 40, overlap = FALSE)
+  expect_true(abs(fy$alpha - 1.5) < 0.1)
+})
+
+test_that("stationary white noise has DFA exponent near 0.5", {
+  set.seed(3)
+  z <- rnorm(4000)
+  fy <- dfa(z, np = 40, overlap = FALSE)
+  expect_true(abs(fy$alpha - 0.5) < 0.1)
+})
+
+test_that("rhodcca coefficient columns stay within [-1, 1]", {
   set.seed(42)
   x <- cumsum(rnorm(500))
   y <- x + cumsum(rnorm(500))
@@ -18,7 +33,6 @@ test_that("rhodcca coefficient column stays within [-1, 1]", {
   expect_s3_class(out, "data.frame")
   expect_true("s" %in% names(out))
 
-  # every column other than the scale column holds rho-DCCA coefficients
   coef_cols <- setdiff(names(out), "s")
   rho_values <- unlist(out[coef_cols])
   rho_values <- rho_values[is.finite(rho_values)]

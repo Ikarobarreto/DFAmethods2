@@ -326,10 +326,10 @@ for(k in 1:np){
 			ols_res<-as.numeric(stats::residuals(stats::lm(data[,1]~data[,-1,drop=FALSE])))
 			rd<-dfa(ols_res,dpo=dpo0,int=TRUE,np=np,overlap=FALSE)
 			ok<-rd$s>=max(10,min(rd$s))&rd$s<=floor(size/10)&rd$F>0
-			# dfa()$F is the mean-squared fluctuation F^2(s), so the DFA exponent
-			# (Hurst) is HALF the slope of log F^2 against log s.
+			# dfa()$F follows the Peng convention (= sqrt(F^2)), so the DFA exponent
+			# is the slope of log F against log s directly.
 			H_resid<-if(sum(ok)<4) NA_real_ else
-				0.5*stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
+				stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
 		}else H_resid<-H_eps
 		if(is.na(H_resid)||H_resid<0.3||H_resid>1.2){
 			if(variance=="inv_corrected")
@@ -664,22 +664,42 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
 
 #' Detrended Fluctuation Analysis
 #'
-#' Calculates DFA
-#' @param data is a vector of time series
-#' @param dpo detrending polynomial order
-#' @param int logical. if TRUE integration process will be applied.
-#' @param np number of point scales.
-#' @param overlap logical. if TRUE overlapping windows will be applied.
-#' @return Scale s, Detrended Fluctuation Function F
+#' Calculates the detrended fluctuation function of a single series.
+#'
+#' The C primitive computes the mean squared fluctuation \eqn{F^2(s)} (the
+#' average of the within-box detrended residual variance over the boxes of
+#' size \eqn{s}). The return uses the conventional Peng et al. (1994) form:
+#' \itemize{
+#'   \item \code{$F = sqrt(F^2)} -- the root mean-squared fluctuation, so that
+#'         \eqn{\alpha} is the slope of \eqn{\log F(s)} vs \eqn{\log s};
+#'   \item \code{$F2 = F^2} -- the squared fluctuation, the legacy quantity
+#'         consumed internally by the package (\code{rhodcca}, \code{fracreg},
+#'         \dots) and useful for combining DFA values across series;
+#'   \item \code{$alpha} -- the estimated DFA exponent (= Hurst exponent for
+#'         self-similar processes), the slope of \eqn{\log F^2(s)/2} against
+#'         \eqn{\log s} over all positive scales.
+#' }
+#'
+#' @param data a numeric vector or single-column matrix.
+#' @param dpo detrending polynomial order (default 1).
+#' @param int logical; if TRUE the input is integrated into the profile (the
+#'   standard use for stationary inputs).
+#' @param np number of scales (box sizes).
+#' @param overlap logical; if TRUE overlapping windows are used.
+#' @return A list with the scale vector \code{s}, the fluctuation function
+#'   \code{F}, the squared fluctuation \code{F2} and the estimated DFA exponent
+#'   \code{alpha}.
 #' @references
-#' Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
+#' Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
+#' Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
 #' \emph{Physical Review E}, 49(2), 1685-1689.
-#' @seealso \code{vignette("DFATools")}
+#' @seealso \code{\link{plotdfa}}, \code{vignette("DFATools")}
 #' @useDynLib DFATools, .registration=TRUE
 #' @examples
 #' set.seed(1)
-#' x <- cumsum(rnorm(300))
-#' dfa(x, np = 20)
+#' x <- cumsum(rnorm(300))           # random walk: alpha ~ 1.5
+#' fy <- dfa(x, np = 20)
+#' round(fy$alpha, 3)
 #' @export
 
 dfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
@@ -688,30 +708,26 @@ dfa<-function(data,dpo=1,int=TRUE,np=91,overlap=TRUE){
 	data<-as.matrix(data)
 	if (int ==TRUE){int=1} else{int=0}
 	dpo<-as.numeric(dpo+1)
-	nc<-ncol(data)
-	sn<-matrix(,ncol=1) #Escalas
 	mx<-round(nrow(data)/5)
-	fn<-matrix(,ncol=1,nrow=np) #Variancia-Covarância sem tendência
-	size=nrow(data)
-#DFA
 seq1<-data[,1]
-# ****** CONFIGURATION STRUCTURE
-NPTS <- length(seq1) #size of series
-NFIT	<- dpo		# order of the regression fit, plus 1
-IFLAG <- as.numeric(int)		# integrate the input data if non-zero
-NR 	<- as.numeric(np)		# number of box sizes
-SW 	<- as.numeric(overlap)		# sliding window
-MINBOX	<- 10		# minimum box size
-MAXBOX	<- as.numeric(mx)		# maximum box size
+NPTS <- length(seq1)
+NFIT	<- dpo
+IFLAG <- as.numeric(int)
+NR 	<- as.numeric(np)
+SW 	<- as.numeric(overlap)
+MINBOX	<- 10
+MAXBOX	<- as.numeric(mx)
 cfg <- as.integer(cbind(NPTS,NFIT,IFLAG,NR,SW,MINBOX,MAXBOX))
 rsi1<- numeric(NR+1)
 msei1<- numeric(NR+1)
 ans1<- .C("rdfa", cfg, as.numeric(seq1), as.integer(rsi1), as.numeric(msei1),PACKAGE = "DFATools")
 sn<- ans1[[3]][1:NR+1]
-fn<-ans1[[4]][1:NR+1]
-DFA<-tibble::as_tibble(cbind.data.frame(sn,fn))
-names(DFA)<-c("s","F")
-return(DFA)
+F2<- ans1[[4]][1:NR+1]                      # squared fluctuation from C
+Fs<- sqrt(pmax(F2,0))                       # Peng F = sqrt(F^2)
+ok<- is.finite(F2)&F2>0
+alpha<- if(sum(ok)<4) NA_real_ else
+	0.5*unname(stats::coef(stats::lm(log(F2[ok])~log(sn[ok])))[[2]])
+list(s=sn, F=Fs, F2=F2, alpha=alpha)
 }
 #' rho Detrended Cross-Correlation Coefficient
 #'
@@ -1497,9 +1513,9 @@ fracreg.IUTest<-function(data,B=100,dpo=1,int=TRUE,np=91,overlap=TRUE){
 
 plotdfa <- function(dfa,seg=FALSE,point=NULL,main=NULL) {
   if(seg){
-    ind<-c(rep("A",point),rep("B",length(dfa[[1]])-point))
-    s<-log10(dfa[[1]])
-    Fl<-log10(dfa[[2]])/2
+    ind<-c(rep("A",point),rep("B",length(dfa$s)-point))
+    s<-log10(dfa$s)
+    Fl<-log10(dfa$F)
     df<-cbind.data.frame(s,Fl,ind)
     alfa1<-round(lm(df$Fl~df$s,subset = df$ind=="A")$coefficients[[2]],3)
     alfa2<-round(lm(df$Fl~df$s,subset = df$ind=="B")$coefficients[[2]],3)
@@ -1515,8 +1531,8 @@ plotdfa <- function(dfa,seg=FALSE,point=NULL,main=NULL) {
       ggplot2::ggtitle(main)
     p1
   } else {
-    s<-log10(dfa[[1]])
-    Fl<-log10(dfa[[2]])/2
+    s<-log10(dfa$s)
+    Fl<-log10(dfa$F)
     df<-cbind.data.frame(s,Fl)
     alfa<-round(lm(df$Fl~df$s)$coefficients[[2]],3)
     p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl))+

@@ -7,31 +7,51 @@
 dfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 }
 \arguments{
-\item{data}{is a vector of time series}
+\item{data}{a numeric vector or single-column matrix.}
 
-\item{dpo}{detrending polynomial order}
+\item{dpo}{detrending polynomial order (default 1).}
 
-\item{int}{logical. if TRUE integration process will be applied.}
+\item{int}{logical; if TRUE the input is integrated into the profile (the
+standard use for stationary inputs).}
 
-\item{np}{number of point scales.}
+\item{np}{number of scales (box sizes).}
 
-\item{overlap}{logical. if TRUE overlapping windows will be applied.}
+\item{overlap}{logical; if TRUE overlapping windows are used.}
 }
 \value{
-Scale s, Detrended Fluctuation Function F
+A list with the scale vector \code{s}, the fluctuation function
+  \code{F}, the squared fluctuation \code{F2} and the estimated DFA exponent
+  \code{alpha}.
 }
 \description{
-Calculates DFA
+Calculates the detrended fluctuation function of a single series.
+}
+\details{
+The C primitive computes the mean squared fluctuation \eqn{F^2(s)} (the
+average of the within-box detrended residual variance over the boxes of
+size \eqn{s}). The return uses the conventional Peng et al. (1994) form:
+\itemize{
+  \item \code{$F = sqrt(F^2)} -- the root mean-squared fluctuation, so that
+        \eqn{\alpha} is the slope of \eqn{\log F(s)} vs \eqn{\log s};
+  \item \code{$F2 = F^2} -- the squared fluctuation, the legacy quantity
+        consumed internally by the package (\code{rhodcca}, \code{fracreg},
+        \dots) and useful for combining DFA values across series;
+  \item \code{$alpha} -- the estimated DFA exponent (= Hurst exponent for
+        self-similar processes), the slope of \eqn{\log F^2(s)/2} against
+        \eqn{\log s} over all positive scales.
+}
 }
 \examples{
 set.seed(1)
-x <- cumsum(rnorm(300))
-dfa(x, np = 20)
+x <- cumsum(rnorm(300))           # random walk: alpha ~ 1.5
+fy <- dfa(x, np = 20)
+round(fy$alpha, 3)
 }
 \references{
-Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
+Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
+Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
 \emph{Physical Review E}, 49(2), 1685-1689.
 }
 \seealso{
-\code{vignette("DFATools")}
+\code{\link{plotdfa}}, \code{vignette("DFATools")}
 }

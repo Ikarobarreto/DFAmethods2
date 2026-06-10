@@ -90,11 +90,12 @@ correlations) and $\alpha < 0.5$ anti-persistence.
 
 ```{r dfa}
 fy <- dfa(dat$y, np = 40)
-head(fy)
+head(data.frame(s = fy$s, F = fy$F, F2 = fy$F2))
 
-# the DFA exponent is the slope of log F(s) against log s
-alpha <- coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]]
-round(alpha, 3)
+# the DFA exponent is the slope of log F(s) against log s,
+# also returned ready-to-use as fy$alpha:
+round(c(slope = coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]],
+        alpha = fy$alpha), 3)
 ```
 
 `plotdfa()` draws the log–log fluctuation plot with the fitted exponent:

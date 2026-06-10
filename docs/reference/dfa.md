@@ -1,6 +1,6 @@
 # Detrended Fluctuation Analysis
 
-Calculates DFA
+Calculates the detrended fluctuation function of a single series.
 
 ## Usage
 
@@ -12,64 +12,64 @@ dfa(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE)
 
 - data:
 
-  is a vector of time series
+  a numeric vector or single-column matrix.
 
 - dpo:
 
-  detrending polynomial order
+  detrending polynomial order (default 1).
 
 - int:
 
-  logical. if TRUE integration process will be applied.
+  logical; if TRUE the input is integrated into the profile (the
+  standard use for stationary inputs).
 
 - np:
 
-  number of point scales.
+  number of scales (box sizes).
 
 - overlap:
 
-  logical. if TRUE overlapping windows will be applied.
+  logical; if TRUE overlapping windows are used.
 
 ## Value
 
-Scale s, Detrended Fluctuation Function F
+A list with the scale vector `s`, the fluctuation function `F`, the
+squared fluctuation `F2` and the estimated DFA exponent `alpha`.
+
+## Details
+
+The C primitive computes the mean squared fluctuation \\F^2(s)\\ (the
+average of the within-box detrended residual variance over the boxes of
+size \\s\\). The return uses the conventional Peng et al. (1994) form:
+
+- `$F = sqrt(F^2)` – the root mean-squared fluctuation, so that
+  \\\alpha\\ is the slope of \\\log F(s)\\ vs \\\log s\\;
+
+- `$F2 = F^2` – the squared fluctuation, the legacy quantity consumed
+  internally by the package (`rhodcca`, `fracreg`, ...) and useful for
+  combining DFA values across series;
+
+- `$alpha` – the estimated DFA exponent (= Hurst exponent for
+  self-similar processes), the slope of \\\log F^2(s)/2\\ against \\\log
+  s\\ over all positive scales.
 
 ## References
 
-Peng, C.-K. et al. (1994). Mosaic organization of DNA nucleotides.
+Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
+Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
 *Physical Review E*, 49(2), 1685-1689.
 
 ## See also
 
+[`plotdfa`](https://ikarobarreto.github.io/DFATools/reference/plotdfa.md),
 [`vignette("DFATools")`](https://ikarobarreto.github.io/DFATools/articles/DFATools.md)
 
 ## Examples
 
 ``` r
 set.seed(1)
-x <- cumsum(rnorm(300))
-dfa(x, np = 20)
-#> # A tibble: 20 × 2
-#>        s      F
-#>    <int>  <dbl>
-#>  1    10   1.94
-#>  2    12   3.29
-#>  3    13   4.17
-#>  4    14   5.19
-#>  5    15   6.37
-#>  6    16   7.74
-#>  7    17   9.30
-#>  8    18  11.1 
-#>  9    19  13.1 
-#> 10    20  15.3 
-#> 11    21  17.8 
-#> 12    23  23.7 
-#> 13    25  30.8 
-#> 14    27  39.3 
-#> 15    29  49.2 
-#> 16    31  60.8 
-#> 17    34  81.5 
-#> 18    37 106.  
-#> 19    40 136.  
-#> 20    43 170.  
+x <- cumsum(rnorm(300))           # random walk: alpha ~ 1.5
+fy <- dfa(x, np = 20)
+round(fy$alpha, 3)
+#> [1] 1.546
 ```

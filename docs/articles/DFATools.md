@@ -76,21 +76,21 @@ anti-persistence.
 
 ``` r
 fy <- dfa(dat$y, np = 40)
-head(fy)
-#> # A tibble: 6 × 2
-#>       s     F
-#>   <int> <dbl>
-#> 1    10  3.81
-#> 2    11  5.01
-#> 3    12  6.43
-#> 4    13  8.09
-#> 5    14 10.0 
-#> 6    15 12.2
+head(data.frame(s = fy$s, F = fy$F, F2 = fy$F2))
+#>    s        F        F2
+#> 1 10 1.950822  3.805708
+#> 2 11 2.237834  5.007899
+#> 3 12 2.535887  6.430721
+#> 4 13 2.844640  8.091978
+#> 5 14 3.163940 10.010515
+#> 6 15 3.493846 12.206962
 
-# the DFA exponent is the slope of log F(s) against log s
-alpha <- coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]]
-round(alpha, 3)
-#> [1] 3.014
+# the DFA exponent is the slope of log F(s) against log s,
+# also returned ready-to-use as fy$alpha:
+round(c(slope = coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]],
+        alpha = fy$alpha), 3)
+#> slope alpha 
+#> 1.507 1.507
 ```
 
 [`plotdfa()`](https://ikarobarreto.github.io/DFATools/reference/plotdfa.md)

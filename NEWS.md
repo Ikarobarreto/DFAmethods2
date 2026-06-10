@@ -56,6 +56,16 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   requires disjoint boxes, so the function is non-overlapping by construction
   (paper M8). Calls that pass `overlap = ...` will fail with the standard
   "unused argument" error.
+* **`dfa()` now follows the Peng convention** explicitly. `$F` is the
+  root-mean-squared fluctuation \eqn{F(s) = \sqrt{F^2(s)}}, so the DFA exponent
+  is the slope of `log(F)` against `log(s)` directly. The previous output
+  (the mean *squared* fluctuation, exposed as `$F`) is now in `$F2`
+  (`sqrt($F2) == $F` by construction). The estimated exponent itself is
+  returned in the new `$alpha` field. The return shape changed from a tibble
+  to a list. Code that took `slope(log(dfa()$F))` and labelled it
+  \eqn{\alpha} was reporting `2 * alpha`; that code now gives the correct
+  Peng exponent. Plot helpers (`plotdfa()`) and the internal residual-
+  exponent estimator in `fracreg()` have been updated accordingly.
 * `vcov = "HC"` is an experimental heteroscedasticity-consistent (sandwich)
   estimator built from per-box detrended-moment scores; `overlap = FALSE` is
   recommended.
