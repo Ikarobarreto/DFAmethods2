@@ -51,6 +51,14 @@ round(fy$alpha, 3)
 Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
 Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
 \emph{Physical Review E}, 49(2), 1685-1689.
+
+Hu, K., Ivanov, P. Ch., Chen, Z., Carpena, P. and Stanley, H. E. (2001).
+Effect of trends on detrended fluctuation analysis. \emph{Physical Review
+E}, 64(1), 011114.
+
+Kantelhardt, J. W., Zschiegner, S. A., Koscielny-Bunde, E., Havlin, S.,
+Bunde, A. and Stanley, H. E. (2002). Multifractal detrended fluctuation
+analysis of nonstationary time series. \emph{Physica A}, 316, 87-114.
 }
 \seealso{
 \code{\link{plotdfa}}, \code{vignette("DFATools")}

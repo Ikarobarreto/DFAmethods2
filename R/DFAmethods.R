@@ -108,15 +108,25 @@ utils::globalVariables(c("s", "rho"))
 #' "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
 #' the two coincide for orthogonal predictors. The default
 #' \code{variance = "inv_corrected"} multiplies the inverse form by the
-#' memory-correction factor \eqn{(2\widehat H + 1)^2 / 21} (Barreto et al. 2026,
-#' Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of the OLS residual,
-#' restoring nominal coverage under polynomial detrending; \code{variance = "inv"}
-#' omits the factor and \code{variance = "marginal"} reproduces the legacy form.
+#' memory-correction factor \eqn{c(\widehat H) = (2\widehat H + 1)^2 / 21}
+#' (Barreto et al. 2026, Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of
+#' the OLS residual, restoring nominal coverage under polynomial detrending;
+#' \code{variance = "inv"} omits the factor and \code{variance = "marginal"}
+#' reproduces the legacy form. The convention is: \eqn{\kappa(s, H) =
+#' F^2(s,H)^2 / \mathrm{Var}(f^2_{X\varepsilon}(s,\nu))} is the ratio of
+#' bilinears that the closed form approximates (\eqn{\kappa \in [2.3, 5]}),
+#' and \eqn{c(H) = 1/\kappa(H) \approx (2H+1)^2/21} is its inverse, the
+#' multiplier actually applied to the variance (\eqn{c \in [0.21, 0.43]}). The
+#' applied multiplier is returned in \code{$c_factor}.
 #'
 #' The variance is normalised by the residual degrees of freedom
 #' \eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of
 #' non-overlapping boxes at scale \eqn{s} and \eqn{k} the number of predictors;
 #' the same \eqn{T_s - k} is the degrees of freedom of the \code{t} quantile.
+#' This differs from \eqn{T_s - k - 1} used by Tilfani et al. (2022): the
+#' scale-wise intercept \eqn{\hat\beta_0(s) = \bar y - \sum_j \hat\beta_j \bar x_j}
+#' is derived from the slope estimates rather than fit jointly across boxes, so
+#' it does not consume an additional degree of freedom.
 #' \eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
 #' \eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
 #' can under-cover under strong long-range dependence (estimated DFA exponent
@@ -158,7 +168,7 @@ utils::globalVariables(c("s", "rho"))
 #'   \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
 #'   \code{kappa} and adjusted \code{R2adj}, the per-series DFA exponent
 #'   \code{alpha}, the residual DFA exponent \code{H_resid} and memory factor
-#'   \code{kappa_factor} used in the correction, the chosen
+#'   \code{c_factor} used in the correction, the chosen
 #'   \code{variance_method}, the effective degrees of freedom \code{df_eff} and
 #'   the box counts \code{Ts}.
 #' @references
@@ -335,10 +345,10 @@ for(k in 1:np){
 			if(variance=="inv_corrected")
 				warning("fracreg(): could not reliably estimate the residual DFA exponent; ",
 					"using kappa = 1 (no memory correction).",call.=FALSE)
-			H_resid<-NA_real_; kappa_factor<-1
+			H_resid<-NA_real_; c_factor<-1
 		}else{
 			H_resid<-min(max(H_resid,0.5),1-1e-6)   # clamp mild excursions into [0.5, 1)
-			kappa_factor<-(2*H_resid+1)^2/21
+			c_factor<-(2*H_resid+1)^2/21
 		}
 	}
 	F2eps<-fn[1,1,k]-dmc2[k]*fn[1,1,k]   # detrended residual variance F^2_eps(s)
@@ -361,7 +371,7 @@ for(k in 1:np){
 	for(i in (2:nc)){
 	  dfk<-floor(size/sn[[k]])-(nc-1)
 	  base_j<-switch(variance,
-	    inv_corrected = Mk[(i-1),(i-1)]*kappa_factor,   # M4.2': inverse x kappa(H)
+	    inv_corrected = Mk[(i-1),(i-1)]*c_factor,   # M4.2': inverse x kappa(H)
 	    inv           = Mk[(i-1),(i-1)],                # M4.2: inverse, no correction
 	    marginal      = 1/fn[i,i,k],                    # M4.1: legacy marginal
 	    Mk[(i-1),(i-1)])                                # hc/none: placeholder
@@ -421,10 +431,10 @@ for(k in 1:np){
 	}
 	Tsv<-floor(size/sn)                          # non-overlapping box count per scale
 	df_eff<-Tsv-(nc-1)                           # residual degrees of freedom T_s - k
-	kappa_factor_v<-rep(kappa_factor,np)         # memory factor (constant across s)
+	c_factor_v<-rep(c_factor,np)         # memory factor (constant across s)
 fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj,alpha,
-	H_resid,kappa_factor_v,variance,df_eff,Tsv)
-names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha","H_resid","kappa_factor","variance_method","df_eff","Ts")
+	H_resid,c_factor_v,variance,df_eff,Tsv)
+names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha","H_resid","c_factor","variance_method","df_eff","Ts")
 
 return(fracreg)
 }
@@ -693,6 +703,14 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
 #' Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
 #' Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
 #' \emph{Physical Review E}, 49(2), 1685-1689.
+#'
+#' Hu, K., Ivanov, P. Ch., Chen, Z., Carpena, P. and Stanley, H. E. (2001).
+#' Effect of trends on detrended fluctuation analysis. \emph{Physical Review
+#' E}, 64(1), 011114.
+#'
+#' Kantelhardt, J. W., Zschiegner, S. A., Koscielny-Bunde, E., Havlin, S.,
+#' Bunde, A. and Stanley, H. E. (2002). Multifractal detrended fluctuation
+#' analysis of nonstationary time series. \emph{Physica A}, 316, 87-114.
 #' @seealso \code{\link{plotdfa}}, \code{vignette("DFATools")}
 #' @useDynLib DFATools, .registration=TRUE
 #' @examples
@@ -745,6 +763,14 @@ list(s=sn, F=Fs, F2=F2, alpha=alpha)
 #'
 #' Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
 #' of cross-correlation. \emph{Physica A}, 390(4), 614-618.
+#'
+#' Kwapien, J., Oswiecimka, P. and Drozdz, S. (2015). Detrended fluctuation
+#' analysis made flexible to detect range of cross-correlated fluctuations.
+#' \emph{Physical Review E}, 92(5), 052815.
+#'
+#' Cavalcanti, S. L. (2019). \emph{Aplicacoes de DFA, DCCA e DPCCA em focos
+#' de calor na Amazonia Legal} (PhD thesis). Universidade Federal Rural de
+#' Pernambuco.
 #' @seealso \code{vignette("DFATools")}
 #' @importFrom tibble as_tibble
 #' @importFrom gdata upperTriangle

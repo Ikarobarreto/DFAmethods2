@@ -35,6 +35,14 @@ a new method for analyzing two nonstationary time series.
 
 Zebende, G. F. (2011). DCCA cross-correlation coefficient: quantifying level
 of cross-correlation. \emph{Physica A}, 390(4), 614-618.
+
+Kwapien, J., Oswiecimka, P. and Drozdz, S. (2015). Detrended fluctuation
+analysis made flexible to detect range of cross-correlated fluctuations.
+\emph{Physical Review E}, 92(5), 052815.
+
+Cavalcanti, S. L. (2019). \emph{Aplicacoes de DFA, DCCA e DPCCA em focos
+de calor na Amazonia Legal} (PhD thesis). Universidade Federal Rural de
+Pernambuco.
 }
 \seealso{
 \code{vignette("DFATools")}

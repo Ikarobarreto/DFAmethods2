@@ -34,7 +34,13 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   as disjoint sampling units; `overlap = TRUE` returns point estimates only
   (`variance = "none"`) with a message.
 * `fracreg()` gains output fields `H_resid` (residual DFA exponent),
-  `kappa_factor` (the memory factor), `variance_method`, `df_eff` (= `T_s - k`)
+  `c_factor` (the memory multiplier `c(H) = (2H+1)^2 / 21`, the inverse of the
+  bilinear ratio `kappa(s, H)` defined in Barreto et al. 2026; renamed from
+  the earlier `kappa_factor`, which named the same quantity by its inverse),
+  `variance_method`, `df_eff` (= `T_s - k`; the package uses `T_s - k` rather
+  than the `T_s - k - 1` of Tilfani et al. 2022 because the scale-wise
+  intercept is derived from the slopes and does not consume a degree of
+  freedom)
   and `Ts` (= `floor(N / s)`). The adjusted R-squared now uses `T_s` (Eq. M3.1).
 * The variance and the matching `t` quantile are normalised by the residual
   degrees of freedom `T_s - k`, where `T_s = floor(N / s)` is the number of
@@ -56,6 +62,9 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   requires disjoint boxes, so the function is non-overlapping by construction
   (paper M8). Calls that pass `overlap = ...` will fail with the standard
   "unused argument" error.
+* Reference list extended with Hu et al. 2001 (PRE 64:011114), Kantelhardt et
+  al. 2002 (Physica A 316:87), Kwapien et al. 2015 (PRE 92:052815), Sikora et
+  al. 2020 (PRE 101:032114) and Cavalcanti 2019 (PhD thesis, UFRPE).
 * **`dfa()` now follows the Peng convention** explicitly. `$F` is the
   root-mean-squared fluctuation \eqn{F(s) = \sqrt{F^2(s)}}, so the DFA exponent
   is the slope of `log(F)` against `log(s)` directly. The previous output

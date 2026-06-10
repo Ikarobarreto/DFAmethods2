@@ -41,8 +41,8 @@ test_that("inv_corrected scales the inverse variance by the memory factor", {
                 overlap = FALSE, variance = "inv", min_boxes = 5)
   fc <- fracreg(cbind(y, x1, x2), dpo = 1, int = TRUE, np = 20,
                 overlap = FALSE, variance = "inv_corrected", min_boxes = 5)
-  expect_equal(fc$VDFA, fi$VDFA * fc$kappa_factor[1])     # M4.2': inv x kappa(H)
-  expect_true(fc$kappa_factor[1] > 0 && fc$kappa_factor[1] <= 1)
+  expect_equal(fc$VDFA, fi$VDFA * fc$c_factor[1])     # M4.2': inv x kappa(H)
+  expect_true(fc$c_factor[1] > 0 && fc$c_factor[1] <= 1)
   expect_true(is.finite(fc$H_resid))
 })
 
@@ -118,8 +118,8 @@ test_that("a strong-memory error (H > 3/4) triggers the warning and reports H_re
     fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE,
             H_eps = 0.85, min_boxes = 5))
   expect_equal(fr$H_resid, 0.85)
-  expect_equal(unname(fr$kappa_factor[1]), (2 * 0.85 + 1)^2 / 21)
-  expect_true(all(c("alpha", "H_resid", "kappa_factor") %in% names(fr)))
+  expect_equal(unname(fr$c_factor[1]), (2 * 0.85 + 1)^2 / 21)
+  expect_true(all(c("alpha", "H_resid", "c_factor") %in% names(fr)))
   expect_length(fr$alpha, 2)
 })
 

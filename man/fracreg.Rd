@@ -62,7 +62,7 @@ A list with, among others: scale \code{s}, detrended fluctuation
   \code{TC}, the scale-wise diagnostics \code{VIF}, condition number
   \code{kappa} and adjusted \code{R2adj}, the per-series DFA exponent
   \code{alpha}, the residual DFA exponent \code{H_resid} and memory factor
-  \code{kappa_factor} used in the correction, the chosen
+  \code{c_factor} used in the correction, the chosen
   \code{variance_method}, the effective degrees of freedom \code{df_eff} and
   the box counts \code{Ts}.
 }
@@ -80,15 +80,25 @@ themselves are estimated. Under collinearity this differs from the legacy
 "marginal" form \eqn{F^2_\varepsilon(s) / F^2_{X_j}(s)} (which under-covers);
 the two coincide for orthogonal predictors. The default
 \code{variance = "inv_corrected"} multiplies the inverse form by the
-memory-correction factor \eqn{(2\widehat H + 1)^2 / 21} (Barreto et al. 2026,
-Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of the OLS residual,
-restoring nominal coverage under polynomial detrending; \code{variance = "inv"}
-omits the factor and \code{variance = "marginal"} reproduces the legacy form.
+memory-correction factor \eqn{c(\widehat H) = (2\widehat H + 1)^2 / 21}
+(Barreto et al. 2026, Eq. M4.2'), with \eqn{\widehat H} the DFA exponent of
+the OLS residual, restoring nominal coverage under polynomial detrending;
+\code{variance = "inv"} omits the factor and \code{variance = "marginal"}
+reproduces the legacy form. The convention is: \eqn{\kappa(s, H) =
+F^2(s,H)^2 / \mathrm{Var}(f^2_{X\varepsilon}(s,\nu))} is the ratio of
+bilinears that the closed form approximates (\eqn{\kappa \in [2.3, 5]}),
+and \eqn{c(H) = 1/\kappa(H) \approx (2H+1)^2/21} is its inverse, the
+multiplier actually applied to the variance (\eqn{c \in [0.21, 0.43]}). The
+applied multiplier is returned in \code{$c_factor}.
 
 The variance is normalised by the residual degrees of freedom
 \eqn{T_s - k}, where \eqn{T_s = \lfloor N/s \rfloor} is the number of
 non-overlapping boxes at scale \eqn{s} and \eqn{k} the number of predictors;
 the same \eqn{T_s - k} is the degrees of freedom of the \code{t} quantile.
+This differs from \eqn{T_s - k - 1} used by Tilfani et al. (2022): the
+scale-wise intercept \eqn{\hat\beta_0(s) = \bar y - \sum_j \hat\beta_j \bar x_j}
+is derived from the slope estimates rather than fit jointly across boxes, so
+it does not consume an additional degree of freedom.
 \eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
 \eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
 can under-cover under strong long-range dependence (estimated DFA exponent
