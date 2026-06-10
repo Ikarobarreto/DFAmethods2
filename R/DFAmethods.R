@@ -341,13 +341,14 @@ for(k in 1:np){
 			H_resid<-if(sum(ok)<4) NA_real_ else
 				stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
 		}else H_resid<-H_eps
-		if(is.na(H_resid)||H_resid<0.3||H_resid>1.2){
+		H_raw<-H_resid                              # before clamp/fallback
+		if(is.na(H_raw)||H_raw<0.3||H_raw>1.2){
 			if(variance=="inv_corrected")
 				warning("fracreg(): could not reliably estimate the residual DFA exponent; ",
-					"using kappa = 1 (no memory correction).",call.=FALSE)
+					"using c = 1 (no memory correction).",call.=FALSE)
 			H_resid<-NA_real_; c_factor<-1
 		}else{
-			H_resid<-min(max(H_resid,0.5),1-1e-6)   # clamp mild excursions into [0.5, 1)
+			H_resid<-min(max(H_raw,0.5),1-1e-6)     # clamp mild excursions into [0.5, 1)
 			c_factor<-(2*H_resid+1)^2/21
 		}
 	}
@@ -412,11 +413,36 @@ for(k in 1:np){
 	alpha<-vapply(seq_len(nc),function(ii)
 		stats::coef(stats::lm(0.5*log(fn[ii,ii,])~log(sn)))[[2]],numeric(1))
 	names(alpha)<-colnames(data)
-	if(variance!="none"&&!is.na(H_resid)&&H_resid>0.75)
-		warning("fracreg(): residual DFA exponent H_resid = ",round(H_resid,2),
-			" exceeds 3/4 (Hermite-Rosenblatt threshold); the analytic interval can ",
-			"under-cover under strong long-range dependence. Prefer ",
-			"fracreg.WB(..., weights = 'dependent').",call.=FALSE)
+	# Gradient of advisories on the residual exponent. The closed-form factor
+	# c(H) = (2H+1)^2/21 is calibrated for H in [0.5, 0.95]; below 0.5 it has
+	# ~20% error and the future variance = "inv_theoretical" (table-based)
+	# should be preferred; between 3/4 and 0.95 the analytic CI starts to
+	# under-cover (Hermite-Rosenblatt regime); above 0.95 the series is close
+	# to non-stationary; saturation near 1 is usually a sign of a missing
+	# trend or omitted covariate.
+	if(variance!="none"&&!is.na(H_resid)){
+		Hr<-round(H_resid,2)
+		if(H_resid>=0.99)
+			warning("fracreg(): H_resid = ",Hr," saturated near 1 -- possible ",
+				"non-stationary regime or omitted variable with long memory. ",
+				"Consider (i) a higher detrending order; (ii) the dependent ",
+				"wild bootstrap (fracreg.WB(weights='dependent')); ",
+				"(iii) auditing the model for exogeneity.",call.=FALSE)
+		else if(H_resid>=0.95)
+			message("fracreg(): H_resid = ",Hr," close to the non-stationary ",
+				"regime; the analytic CIs are conservative. Consider ",
+				"fracreg.WB(weights='dependent') for inference.")
+		else if(H_resid>0.75)
+			warning("fracreg(): H_resid = ",Hr," exceeds 3/4 (Hermite-Rosenblatt ",
+				"threshold); the analytic interval can under-cover under strong ",
+				"long-range dependence. Prefer fracreg.WB(weights='dependent').",
+				call.=FALSE)
+		else if(!is.na(H_raw)&&H_raw<0.5)
+			message("fracreg(): H_resid = ",round(H_raw,2)," below 0.5; the closed-",
+				"form memory factor c(H) = (2H+1)^2/21 has up to ~20% error in ",
+				"this range (calibrated for H in [0.5, 0.95]); H was clamped at ",
+				"0.5 for the correction.")
+	}
 	if(variance!="none"){
 		few_idx<-which(Tsv_loop<min_boxes|Tsv_loop<=nc-1)
 		if(length(few_idx)){

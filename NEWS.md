@@ -62,6 +62,12 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   requires disjoint boxes, so the function is non-overlapping by construction
   (paper M8). Calls that pass `overlap = ...` will fail with the standard
   "unused argument" error.
+* `fracreg()` now issues a graded advisory on the residual exponent: a
+  message when `H_resid < 0.5` (below the calibration range of the closed-
+  form factor); the existing Hermite-Rosenblatt warning at `H_resid > 0.75`;
+  a message when `H_resid >= 0.95` (close to the non-stationary regime);
+  and a stronger saturation warning at `H_resid >= 0.99` flagging possible
+  non-stationary regime or omitted long-memory variable.
 * Reference list extended with Hu et al. 2001 (PRE 64:011114), Kantelhardt et
   al. 2002 (Physica A 316:87), Kwapien et al. 2015 (PRE 92:052815), Sikora et
   al. 2020 (PRE 101:032114) and Cavalcanti 2019 (PhD thesis, UFRPE).
