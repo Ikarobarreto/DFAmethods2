@@ -13,3 +13,4 @@
 ^.*desktop\.ini$
 ^CRAN-SUBMISSION$
 ^\.github$
+^data-raw$

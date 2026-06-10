@@ -147,7 +147,12 @@ utils::globalVariables(c("s", "rho"))
 #'   \eqn{F^2_\varepsilon(s)[F_{XX}(s)^{-1}]_{jj}/(T_s-k)\cdot(2\widehat H+1)^2/21}
 #'   (Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
 #'   (Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
-#'   form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
+#'   form (Shen 2015), which under-covers under collinearity;
+#'   \code{"inv_theoretical"} the inverse form scaled by
+#'   \eqn{1/\kappa_\mathrm{th}(s, H)} interpolated from the embedded
+#'   \code{kappa_th_table} (Barreto et al. 2026 Table A.1), which is
+#'   recommended for very long series and over the H regime outside the
+#'   calibration range of the closed form; \code{"hc"} the
 #'   heteroscedasticity-consistent sandwich; \code{"wildboot"} a reserved
 #'   placeholder for an analytical dependent-wild-bootstrap variant planned
 #'   for DFATools >= 1.1 (the function currently errors with a pointer to
@@ -156,6 +161,12 @@ utils::globalVariables(c("s", "rho"))
 #' @param H_eps optional numeric. A pre-computed DFA exponent of the regression
 #'   error to use in the memory correction; if \code{NULL} (default) it is
 #'   estimated from the OLS residual.
+#' @param auto_select_kappa logical (default TRUE). When
+#'   \code{variance = "inv_corrected"}, scales with \eqn{T_s > 500} use the
+#'   table-based factor \eqn{1/\kappa_\mathrm{th}(s, H)} instead of the closed
+#'   form: the \eqn{1/T_s} term that the constant \eqn{21} absorbs becomes
+#'   negligible for very long series, and the closed form would over-shrink
+#'   the variance. Set FALSE to force the closed form at every scale.
 #' @param min_boxes minimum number of non-overlapping boxes
 #'   \eqn{T_s = \lfloor N/s\rfloor} required for inference at a scale (default
 #'   15). Scales with \eqn{T_s < } \code{min_boxes} return \code{NA} standard
@@ -211,11 +222,13 @@ utils::globalVariables(c("s", "rho"))
 #' @useDynLib DFATools, .registration=TRUE
 
 fracreg<-function(data,dpo=1,int=TRUE,np=91,overlap=FALSE,
-                  variance=c("inv_corrected","inv","marginal","hc","wildboot","none"),
-                  H_eps=NULL,min_boxes=15,abs=FALSE){
+                  variance=c("inv_corrected","inv","inv_theoretical","marginal","hc","wildboot","none"),
+                  H_eps=NULL,min_boxes=15,auto_select_kappa=TRUE,abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
 	variance<-match.arg(variance)
+	if(!is.logical(auto_select_kappa)||length(auto_select_kappa)!=1L||is.na(auto_select_kappa))
+		stop("fracreg(): `auto_select_kappa` must be a single TRUE or FALSE.",call.=FALSE)
 	if(variance=="wildboot")
 		stop("fracreg(): variance = 'wildboot' is reserved for a future release ",
 			"(DFATools >= 1.1; see Barreto et al. 2026 P2 programme). For ",
@@ -338,9 +351,13 @@ u1<-NULL
 }
 for(k in 1:np){
 	if(k==1L){
-		# Memory-correction factor (Barreto et al. 2026, Eq. M4.2'):
-		# kappa(H) = (2H+1)^2 / 21, with H the DFA-1 exponent of the OLS RESIDUAL
-		# (the error's long memory drives the score CLT, not the predictors').
+		# Memory-correction factor c(H) = (2H+1)^2 / 21 (Barreto et al. 2026,
+		# Eq. M4.2'), with H the DFA-1 exponent of the OLS RESIDUAL (the error's
+		# long memory drives the score CLT, not the predictors'). For
+		# variance = "inv_theoretical", or for "inv_corrected" with
+		# auto_select_kappa at scales where T_s > 500, the per-scale factor is
+		# taken from the embedded kappa_th_table instead (closed-form 1/T_s
+		# residual term is no longer negligible there).
 		if(is.null(H_eps)){
 			ols_res<-as.numeric(stats::residuals(stats::lm(data[,1]~data[,-1,drop=FALSE])))
 			rd<-dfa(ols_res,dpo=dpo0,int=TRUE,np=np,overlap=FALSE)
@@ -351,14 +368,25 @@ for(k in 1:np){
 				stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
 		}else H_resid<-H_eps
 		H_raw<-H_resid                              # before clamp/fallback
+		c_factor<-rep(1,np)                         # default: no correction
 		if(is.na(H_raw)||H_raw<0.3||H_raw>1.2){
-			if(variance=="inv_corrected")
+			if(variance %in% c("inv_corrected","inv_theoretical"))
 				warning("fracreg(): could not reliably estimate the residual DFA exponent; ",
 					"using c = 1 (no memory correction).",call.=FALSE)
-			H_resid<-NA_real_; c_factor<-1
+			H_resid<-NA_real_
 		}else{
 			H_resid<-min(max(H_raw,0.5),1-1e-6)     # clamp mild excursions into [0.5, 1)
-			c_factor<-(2*H_resid+1)^2/21
+			closed<-(2*H_resid+1)^2/21              # closed-form factor c(H)
+			if(variance=="inv_theoretical"){
+				c_factor<-1/vapply(sn,.kappa_th,numeric(1),H=H_resid)
+			}else if(variance=="inv_corrected"){
+				c_factor[]<-closed
+				if(auto_select_kappa){
+					big<-floor(size/sn)>500           # T_s > 500: prefer table
+					if(any(big))
+						c_factor[big]<-1/vapply(sn[big],.kappa_th,numeric(1),H=H_resid)
+				}
+			}
 		}
 	}
 	F2eps<-fn[1,1,k]-dmc2[k]*fn[1,1,k]   # detrended residual variance F^2_eps(s)
@@ -381,9 +409,10 @@ for(k in 1:np){
 	for(i in (2:nc)){
 	  dfk<-floor(size/sn[[k]])-(nc-1)
 	  base_j<-switch(variance,
-	    inv_corrected = Mk[(i-1),(i-1)]*c_factor,   # M4.2': inverse x kappa(H)
-	    inv           = Mk[(i-1),(i-1)],                # M4.2: inverse, no correction
-	    marginal      = 1/fn[i,i,k],                    # M4.1: legacy marginal
+	    inv_corrected   = Mk[(i-1),(i-1)]*c_factor[k],  # M4.2': inverse x c(H)
+	    inv_theoretical = Mk[(i-1),(i-1)]*c_factor[k],  # M4.2'': inverse x 1/kappa_th
+	    inv             = Mk[(i-1),(i-1)],              # M4.2: inverse, no correction
+	    marginal        = 1/fn[i,i,k],                  # M4.1: legacy marginal
 	    Mk[(i-1),(i-1)])                                # hc/none: placeholder
 	  vn[,(i-1),k]<-F2eps*base_j/dfk
 	  vn2[,(i-1),k]<-(un[1,1,k]%*%solve(fn[i,i,k]))
@@ -466,7 +495,7 @@ for(k in 1:np){
 	}
 	Tsv<-floor(size/sn)                          # non-overlapping box count per scale
 	df_eff<-Tsv-(nc-1)                           # residual degrees of freedom T_s - k
-	c_factor_v<-rep(c_factor,np)         # memory factor (constant across s)
+	c_factor_v<-c_factor                 # per-scale memory factor (Eq. M4.2'/'')
 fracreg<-list(sn,fn,pn,dp,bn,bs,un,vn,vn2,dmc2,rn,uci,lci,tn,tnc,VIFn,kappan,r2adj,alpha,
 	H_resid,c_factor_v,variance,df_eff,Tsv)
 names(fracreg)<-c("s","F","DCCA","DPCCA","BDFA","BSDFA","UDFA","VDFA","VDFA2","DMC2","R2DFA","UCIB","LCIB","p.value","TC","VIF","kappa","R2adj","alpha","H_resid","c_factor","variance_method","df_eff","Ts")
@@ -595,6 +624,26 @@ fracreg.diag <- function(data, dpo = 1, int = TRUE, np = 91, overlap = TRUE, abs
     U <- chol(K + diag(1e-8, Ts))                         # K = U'U
     t(U) %*% matrix(stats::rnorm(Ts * B), Ts, B)
   }
+}
+
+# Bilinear interpolation of the theoretical bilinear ratio kappa_th(s, H)
+# (Barreto et al. 2026 Table A.1), embedded as the internal kappa_th_table.
+# Returns kappa_th >= 1; inputs outside the calibrated grid are clamped to the
+# nearest gridpoint (the table varies slowly there).
+.kappa_th <- function(s, H, table = kappa_th_table) {
+  s_grid <- sort(unique(table$s))
+  H_grid <- sort(unique(table$H))
+  H_clip <- min(max(H, min(H_grid)), max(H_grid))
+  s_clip <- min(max(s, min(s_grid)), max(s_grid))
+  s_lo <- max(s_grid[s_grid <= s_clip]); s_hi <- min(s_grid[s_grid >= s_clip])
+  H_lo <- max(H_grid[H_grid <= H_clip]); H_hi <- min(H_grid[H_grid >= H_clip])
+  pick <- function(ss, HH) table$kappa_th[table$s == ss & table$H == HH]
+  k_ll <- pick(s_lo, H_lo); k_lh <- pick(s_lo, H_hi)
+  k_hl <- pick(s_hi, H_lo); k_hh <- pick(s_hi, H_hi)
+  fs <- if (s_hi == s_lo) 0 else (s_clip - s_lo) / (s_hi - s_lo)
+  fH <- if (H_hi == H_lo) 0 else (H_clip - H_lo) / (H_hi - H_lo)
+  (1 - fs) * (1 - fH) * k_ll + (1 - fs) * fH * k_lh +
+        fs  * (1 - fH) * k_hl +       fs  * fH * k_hh
 }
 
 #' Wild bootstrap inference for the fractal regression

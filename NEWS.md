@@ -62,6 +62,18 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   requires disjoint boxes, so the function is non-overlapping by construction
   (paper M8). Calls that pass `overlap = ...` will fail with the standard
   "unused argument" error.
+* New `variance = "inv_theoretical"` and `auto_select_kappa` argument.
+  The package now ships an internal lookup table `kappa_th_table`
+  (Barreto et al. 2026 Table A.1) of the theoretical bilinear ratio
+  `kappa_th(s, H)`. The new method `variance = "inv_theoretical"` applies
+  the per-scale factor `1 / kappa_th(s, H_resid)` bilinearly interpolated
+  from this table -- accurate over the full calibrated H regime, not just
+  the closed-form's `[0.5, 0.95]` range. `auto_select_kappa = TRUE` (the
+  default) makes `variance = "inv_corrected"` use the table only at scales
+  with `T_s > 500`, where the closed form's absorbed `1/T_s` term has
+  become negligible and the constant `21` would over-shrink; set FALSE to
+  force the closed form everywhere. The returned `$c_factor` field is now
+  a per-scale vector reflecting the factor actually applied.
 * `fracreg()` reserves a new `variance = "wildboot"` placeholder for an
   analytical dependent-wild-bootstrap variant planned for DFATools >= 1.1
   (cf. Barreto et al. 2026 P2 programme); calling it today errors with a

@@ -10,9 +10,11 @@ fracreg(
   int = TRUE,
   np = 91,
   overlap = FALSE,
-  variance = c("inv_corrected", "inv", "marginal", "hc", "wildboot", "none"),
+  variance = c("inv_corrected", "inv", "inv_theoretical", "marginal", "hc", "wildboot",
+    "none"),
   H_eps = NULL,
   min_boxes = 15,
+  auto_select_kappa = TRUE,
   abs = FALSE
 )
 }
@@ -36,7 +38,12 @@ them disjoint. With \code{overlap = TRUE} only point estimates are returned
 \eqn{F^2_\varepsilon(s)[F_{XX}(s)^{-1}]_{jj}/(T_s-k)\cdot(2\widehat H+1)^2/21}
 (Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
 (Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
-form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
+form (Shen 2015), which under-covers under collinearity;
+\code{"inv_theoretical"} the inverse form scaled by
+\eqn{1/\kappa_\mathrm{th}(s, H)} interpolated from the embedded
+\code{kappa_th_table} (Barreto et al. 2026 Table A.1), which is
+recommended for very long series and over the H regime outside the
+calibration range of the closed form; \code{"hc"} the
 heteroscedasticity-consistent sandwich; \code{"wildboot"} a reserved
 placeholder for an analytical dependent-wild-bootstrap variant planned
 for DFATools >= 1.1 (the function currently errors with a pointer to
@@ -52,6 +59,13 @@ estimated from the OLS residual.}
 15). Scales with \eqn{T_s < } \code{min_boxes} return \code{NA} standard
 errors, confidence limits and p-values, with a single warning listing them.
 A warning is also issued when \eqn{N < 500} (Likens et al. 2019).}
+
+\item{auto_select_kappa}{logical (default TRUE). When
+\code{variance = "inv_corrected"}, scales with \eqn{T_s > 500} use the
+table-based factor \eqn{1/\kappa_\mathrm{th}(s, H)} instead of the closed
+form: the \eqn{1/T_s} term that the constant \eqn{21} absorbs becomes
+negligible for very long series, and the closed form would over-shrink
+the variance. Set FALSE to force the closed form at every scale.}
 
 \item{abs}{logical. If TRUE the absolute detrended covariance is used in the
 cross-correlation step (more robust to outliers).}

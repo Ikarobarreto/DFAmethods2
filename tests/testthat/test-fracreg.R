@@ -173,6 +173,45 @@ test_that("fracreg.WB min_boxes blanks the CI of small-T_s scales", {
   expect_true(all(is.finite(wb$beta_x[big])))          # point estimate still computed
 })
 
+test_that("variance = 'inv_theoretical' applies a per-scale factor from the table", {
+  set.seed(40)
+  n <- 1500
+  d <- cbind(y = rnorm(n), x1 = rnorm(n), x2 = rnorm(n))
+  fr <- suppressWarnings(fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE,
+                                 variance = "inv_theoretical", min_boxes = 5))
+  expect_identical(fr$variance_method, "inv_theoretical")
+  expect_length(fr$c_factor, 20)
+  expect_true(all(fr$c_factor > 0.1 & fr$c_factor < 0.6, na.rm = TRUE))
+  # The table-based factor varies slowly with s, so successive scales differ
+  expect_false(isTRUE(all.equal(fr$c_factor[1], fr$c_factor[20])))
+})
+
+test_that("auto_select_kappa switches to the table for T_s > 500", {
+  set.seed(41)
+  n <- 30000
+  d <- cbind(y = rnorm(n), x1 = rnorm(n), x2 = rnorm(n))
+  fc <- suppressWarnings(fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE,
+                                 variance = "inv_corrected", min_boxes = 5))
+  big <- floor(n / fc$s) > 500
+  closed <- (2 * fc$H_resid + 1)^2 / 21
+  # Some scales must have T_s > 500 and use the table instead of the closed form
+  expect_true(any(big))
+  expect_true(any(abs(fc$c_factor[big] - closed) > 1e-6, na.rm = TRUE))
+  # auto_select_kappa = FALSE forces the closed form everywhere
+  fc2 <- suppressWarnings(fracreg(d, dpo = 1, int = TRUE, np = 20, overlap = FALSE,
+                                  variance = "inv_corrected", min_boxes = 5,
+                                  auto_select_kappa = FALSE))
+  expect_true(all(abs(fc2$c_factor - closed) < 1e-9, na.rm = TRUE))
+})
+
+test_that("variance = 'wildboot' errors with a pointer to fracreg.WB", {
+  set.seed(42)
+  d <- cbind(y = rnorm(500), x = rnorm(500))
+  expect_error(fracreg(d, dpo = 1, int = TRUE, np = 10, variance = "wildboot",
+                       min_boxes = 5),
+               "DFATools >= 1.1|fracreg.WB")
+})
+
 test_that("fracreg.WB runs and i.i.d. weights reproduce the HC variance", {
   set.seed(1)
   n <- 500; np <- 10
