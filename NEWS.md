@@ -62,6 +62,11 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   requires disjoint boxes, so the function is non-overlapping by construction
   (paper M8). Calls that pass `overlap = ...` will fail with the standard
   "unused argument" error.
+* `fracreg()` reserves a new `variance = "wildboot"` placeholder for an
+  analytical dependent-wild-bootstrap variant planned for DFATools >= 1.1
+  (cf. Barreto et al. 2026 P2 programme); calling it today errors with a
+  pointer to `fracreg.WB(weights = 'dependent')`, the implemented wild
+  bootstrap built on the same per-box moment scores.
 * `fracreg()` now issues a graded advisory on the residual exponent: a
   message when `H_resid < 0.5` (below the calibration range of the closed-
   form factor); the existing Hermite-Rosenblatt warning at `H_resid > 0.75`;

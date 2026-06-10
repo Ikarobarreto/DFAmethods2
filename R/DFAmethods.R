@@ -148,8 +148,11 @@ utils::globalVariables(c("s", "rho"))
 #'   (Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
 #'   (Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
 #'   form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
-#'   heteroscedasticity-consistent sandwich; or \code{"none"} for point estimates
-#'   only.
+#'   heteroscedasticity-consistent sandwich; \code{"wildboot"} a reserved
+#'   placeholder for an analytical dependent-wild-bootstrap variant planned
+#'   for DFATools >= 1.1 (the function currently errors with a pointer to
+#'   \code{\link{fracreg.WB}}, the implemented wild bootstrap); or
+#'   \code{"none"} for point estimates only.
 #' @param H_eps optional numeric. A pre-computed DFA exponent of the regression
 #'   error to use in the memory correction; if \code{NULL} (default) it is
 #'   estimated from the OLS residual.
@@ -208,11 +211,17 @@ utils::globalVariables(c("s", "rho"))
 #' @useDynLib DFATools, .registration=TRUE
 
 fracreg<-function(data,dpo=1,int=TRUE,np=91,overlap=FALSE,
-                  variance=c("inv_corrected","inv","marginal","hc","none"),
+                  variance=c("inv_corrected","inv","marginal","hc","wildboot","none"),
                   H_eps=NULL,min_boxes=15,abs=FALSE){
 	.check_common(np, dpo, int, overlap, "fracreg")
 	.check_matrix(data, 2, "fracreg")
 	variance<-match.arg(variance)
+	if(variance=="wildboot")
+		stop("fracreg(): variance = 'wildboot' is reserved for a future release ",
+			"(DFATools >= 1.1; see Barreto et al. 2026 P2 programme). For ",
+			"wild-bootstrap inference today, use fracreg.WB(..., weights = ",
+			"'dependent'), which is built on the same per-box moment scores.",
+			call.=FALSE)
 	if(!is.logical(abs)||length(abs)!=1L||is.na(abs))
 		stop("fracreg(): `abs` must be a single TRUE or FALSE.", call.=FALSE)
 	if(!is.null(H_eps)&&(!is.numeric(H_eps)||length(H_eps)!=1L))

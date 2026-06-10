@@ -10,7 +10,7 @@ fracreg(
   int = TRUE,
   np = 91,
   overlap = FALSE,
-  variance = c("inv_corrected", "inv", "marginal", "hc", "none"),
+  variance = c("inv_corrected", "inv", "marginal", "hc", "wildboot", "none"),
   H_eps = NULL,
   min_boxes = 15,
   abs = FALSE
@@ -37,8 +37,11 @@ them disjoint. With \code{overlap = TRUE} only point estimates are returned
 (Barreto et al. 2026, Eq. M4.2'); \code{"inv"} the uncorrected inverse
 (Tilfani et al. 2022); \code{"marginal"} the legacy \eqn{1/F^2_{X_j}(s)}
 form (Shen 2015), which under-covers under collinearity; \code{"hc"} the
-heteroscedasticity-consistent sandwich; or \code{"none"} for point estimates
-only.}
+heteroscedasticity-consistent sandwich; \code{"wildboot"} a reserved
+placeholder for an analytical dependent-wild-bootstrap variant planned
+for DFATools >= 1.1 (the function currently errors with a pointer to
+\code{\link{fracreg.WB}}, the implemented wild bootstrap); or
+\code{"none"} for point estimates only.}
 
 \item{H_eps}{optional numeric. A pre-computed DFA exponent of the regression
 error to use in the memory correction; if \code{NULL} (default) it is
