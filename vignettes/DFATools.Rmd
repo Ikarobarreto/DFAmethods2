@@ -90,13 +90,11 @@ correlations) and $\alpha < 0.5$ anti-persistence.
 
 ```{r dfa}
 fy <- dfa(dat$y, np = 40)
-head(data.frame(s = fy$s, F2 = fy$F2, F_sqrt = fy$F_sqrt))
+head(data.frame(s = fy$s, F = fy$F, F2 = fy$F2))
 
-# `fy$F` is the (legacy) squared fluctuation F^2(s); it equals `fy$F2`.
-# `fy$F_sqrt` is the Peng-convention root mean-squared fluctuation, so
-# the DFA exponent is the slope of log F_sqrt vs log s -- returned
-# ready-to-use as `fy$alpha`:
-round(c(slope = coef(lm(log10(fy$F_sqrt) ~ log10(fy$s)))[[2]],
+# the DFA exponent is the slope of log F(s) against log s,
+# also returned ready-to-use as fy$alpha:
+round(c(slope = coef(lm(log10(fy$F) ~ log10(fy$s)))[[2]],
         alpha = fy$alpha), 3)
 ```
 

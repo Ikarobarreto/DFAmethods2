@@ -19,10 +19,9 @@ standard use for stationary inputs).}
 \item{overlap}{logical; if TRUE overlapping windows are used.}
 }
 \value{
-A list with the scale vector \code{s}, the squared fluctuation
-  \code{F} (= \code{F2}; switches to the Peng convention in DFATools
-  2.0.0), \code{F_sqrt = sqrt(F2)} (Peng convention) and the estimated DFA
-  exponent \code{alpha}.
+A list with the scale vector \code{s}, the fluctuation function
+  \code{F} (= \code{sqrt(F2)}, Peng convention), the squared fluctuation
+  \code{F2} and the estimated DFA exponent \code{alpha}.
 }
 \description{
 Calculates the detrended fluctuation function of a single series.
@@ -30,25 +29,16 @@ Calculates the detrended fluctuation function of a single series.
 \details{
 The C primitive computes the mean squared fluctuation \eqn{F^2(s)} (the
 average of the within-box detrended residual variance over the boxes of
-size \eqn{s}). The return preserves backward compatibility in this 1.x
-line and adds two new fields with the Peng convention:
+size \eqn{s}). The return uses the conventional Peng et al. (1994) form:
 \itemize{
-  \item \code{$F = F^2(s)} -- the mean squared fluctuation, kept for
-        backward compatibility with code that consumes \code{$F} as the
-        squared quantity (its slope against \eqn{\log s} is \eqn{2\alpha},
-        not \eqn{\alpha}). In DFATools 2.0.0 this field will switch to the
-        Peng convention; user code that needs the squared form long-term
-        should use \code{$F2}.
-  \item \code{$F2 = F^2(s)} -- the squared fluctuation under an explicit
-        name; useful for combining DFA values across series and for the
-        scale-wise covariance machinery internal to the package.
-  \item \code{$F_sqrt = sqrt(F^2(s))} -- the Peng-convention
-        root mean-squared fluctuation, so that \eqn{\alpha} is the slope
-        of \eqn{\log F_{sqrt}(s)} vs \eqn{\log s} directly.
+  \item \code{$F = sqrt(F^2)} -- the root mean-squared fluctuation, so that
+        \eqn{\alpha} is the slope of \eqn{\log F(s)} vs \eqn{\log s};
+  \item \code{$F2 = F^2} -- the squared fluctuation, the legacy quantity
+        consumed internally by the package (\code{rhodcca}, \code{fracreg},
+        \dots) and useful for combining DFA values across series;
   \item \code{$alpha} -- the estimated DFA exponent (= Hurst exponent for
-        self-similar processes), computed once from
-        \eqn{\frac{1}{2}\,\mathrm{slope}(\log F^2 \sim \log s)}, equivalent
-        to \eqn{\mathrm{slope}(\log F_{sqrt} \sim \log s)}.
+        self-similar processes), the slope of \eqn{\log F(s)} vs
+        \eqn{\log s} over all positive scales.
 }
 }
 \examples{
