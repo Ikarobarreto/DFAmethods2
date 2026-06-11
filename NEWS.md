@@ -83,21 +83,31 @@ Fluctuation Analysis and related scale-dependent methods in one place.
   message when `H_resid < 0.5` (below the calibration range of the closed-
   form factor); the existing Hermite-Rosenblatt warning at `H_resid > 0.75`;
   a message when `H_resid >= 0.95` (close to the non-stationary regime);
-  and a stronger saturation warning at `H_resid >= 0.99` flagging possible
-  non-stationary regime or omitted long-memory variable.
+  and a stronger saturation warning at `H_resid >= 0.99` listing four
+  candidate causes -- non-stationary regime, external smoothing of the
+  series (regulation, low-pass filtering, interpolation, poorly removed
+  seasonality), omitted long-memory covariate, short series with trend
+  remnants.
+* The choice `df = T_s - k` in the variance and t-quantile is documented in
+  `?fracreg` against Tilfani et al. (2022)'s `T_s - k - 1`, with the
+  empirical type-I error from the assumptions-audit decisor study (60
+  configurations, `Nsim = 2000`; type-I `~ 0.034` against nominal `0.05`).
 * Reference list extended with Hu et al. 2001 (PRE 64:011114), Kantelhardt et
   al. 2002 (Physica A 316:87), Kwapien et al. 2015 (PRE 92:052815), Sikora et
   al. 2020 (PRE 101:032114) and Cavalcanti 2019 (PhD thesis, UFRPE).
-* **`dfa()` now follows the Peng convention** explicitly. `$F` is the
-  root-mean-squared fluctuation \eqn{F(s) = \sqrt{F^2(s)}}, so the DFA exponent
-  is the slope of `log(F)` against `log(s)` directly. The previous output
-  (the mean *squared* fluctuation, exposed as `$F`) is now in `$F2`
-  (`sqrt($F2) == $F` by construction). The estimated exponent itself is
-  returned in the new `$alpha` field. The return shape changed from a tibble
-  to a list. Code that took `slope(log(dfa()$F))` and labelled it
-  \eqn{\alpha} was reporting `2 * alpha`; that code now gives the correct
-  Peng exponent. Plot helpers (`plotdfa()`) and the internal residual-
-  exponent estimator in `fracreg()` have been updated accordingly.
+* **`dfa()` adds Peng-convention fields without breaking existing callers.**
+  The return shape changed from a tibble to a list with five fields:
+  `$s` (scales); `$F` -- kept as the mean *squared* fluctuation
+  \eqn{F^2(s)} for backward compatibility (its slope against `log(s)` is
+  `2 * alpha`, not `alpha`); `$F2` -- the explicit alias of `$F`, the name
+  to use long-term for the squared form; `$F_sqrt` -- the new
+  Peng-convention root mean-squared fluctuation \eqn{\sqrt{F^2(s)}}, whose
+  slope against `log(s)` is the DFA exponent directly; and `$alpha` -- the
+  estimated DFA exponent (= Hurst), computed once and returned ready to use.
+  In **DFATools 2.0.0** `$F` will switch to the Peng convention; code that
+  needs the squared form long-term should migrate to `$F2` now. The internal
+  estimator of the residual exponent in `fracreg()` and the plot helper
+  `plotdfa()` read `$F_sqrt` so they remain correct under either convention.
 * `vcov = "HC"` is an experimental heteroscedasticity-consistent (sandwich)
   estimator built from per-box detrended-moment scores; `overlap = FALSE` is
   recommended.

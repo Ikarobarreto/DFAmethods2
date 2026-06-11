@@ -1,13 +1,20 @@
-test_that("dfa() returns the Peng-convention quantities and a consistent alpha", {
+test_that("dfa() returns the staged-C contract: $F (legacy F^2), $F2, $F_sqrt, $alpha", {
   set.seed(1)
   x <- cumsum(rnorm(2000))                       # random walk: alpha ~ 1.5
   fy <- dfa(x, np = 30, overlap = FALSE)
   expect_type(fy, "list")
-  expect_named(fy, c("s", "F", "F2", "alpha"))
-  expect_equal(sqrt(fy$F2), fy$F)                # F = sqrt(F2) by construction
-  pos <- fy$F > 0
-  slope <- unname(coef(stats::lm(log(fy$F[pos]) ~ log(fy$s[pos])))[[2]])
-  expect_equal(fy$alpha, slope)                  # alpha is the slope of log F
+  expect_named(fy, c("s", "F", "F2", "F_sqrt", "alpha"))
+  # In the 1.x line $F is still the squared fluctuation (= $F2), preserved for
+  # backward compatibility. $F_sqrt is the Peng-convention sqrt.
+  expect_identical(fy$F, fy$F2)
+  expect_equal(sqrt(fy$F2), fy$F_sqrt)
+  # alpha equals the slope of log F_sqrt vs log s (Peng convention)
+  pos <- fy$F_sqrt > 0
+  slope_peng <- unname(coef(stats::lm(log(fy$F_sqrt[pos]) ~ log(fy$s[pos])))[[2]])
+  expect_equal(fy$alpha, slope_peng)
+  # Equivalently: alpha is half the slope of log F^2 vs log s
+  slope_F2 <- unname(coef(stats::lm(log(fy$F2[pos]) ~ log(fy$s[pos])))[[2]])
+  expect_equal(fy$alpha, 0.5 * slope_F2)
 })
 
 test_that("integrated random walk has DFA exponent near 1.5 (within sampling noise)", {
@@ -22,6 +29,13 @@ test_that("stationary white noise has DFA exponent near 0.5", {
   z <- rnorm(4000)
   fy <- dfa(z, np = 40, overlap = FALSE)
   expect_true(abs(fy$alpha - 0.5) < 0.1)
+})
+
+test_that("plotdfa() works on the new dfa() output", {
+  set.seed(4)
+  x <- cumsum(rnorm(800))
+  expect_silent(suppressMessages(p <- plotdfa(dfa(x, np = 20, overlap = FALSE))))
+  expect_s3_class(p, "ggplot")
 })
 
 test_that("rhodcca coefficient columns stay within [-1, 1]", {

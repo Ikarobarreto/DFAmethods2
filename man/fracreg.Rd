@@ -115,7 +115,11 @@ the same \eqn{T_s - k} is the degrees of freedom of the \code{t} quantile.
 This differs from \eqn{T_s - k - 1} used by Tilfani et al. (2022): the
 scale-wise intercept \eqn{\hat\beta_0(s) = \bar y - \sum_j \hat\beta_j \bar x_j}
 is derived from the slope estimates rather than fit jointly across boxes, so
-it does not consume an additional degree of freedom.
+it does not consume an additional degree of freedom. The choice is also
+supported empirically: the decisor experiment of Barreto et al. (2026,
+60 configurations, \eqn{N_{\mathrm{sim}}=2000}) gives a type-I error of
+\eqn{\approx 0.034} uniformly with \eqn{T_s - k}, conservative relative to
+the nominal \eqn{0.05}.
 \eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
 \eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
 can under-cover under strong long-range dependence (estimated DFA exponent

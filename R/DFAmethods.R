@@ -126,7 +126,11 @@ utils::globalVariables(c("s", "rho"))
 #' This differs from \eqn{T_s - k - 1} used by Tilfani et al. (2022): the
 #' scale-wise intercept \eqn{\hat\beta_0(s) = \bar y - \sum_j \hat\beta_j \bar x_j}
 #' is derived from the slope estimates rather than fit jointly across boxes, so
-#' it does not consume an additional degree of freedom.
+#' it does not consume an additional degree of freedom. The choice is also
+#' supported empirically: the decisor experiment of Barreto et al. (2026,
+#' 60 configurations, \eqn{N_{\mathrm{sim}}=2000}) gives a type-I error of
+#' \eqn{\approx 0.034} uniformly with \eqn{T_s - k}, conservative relative to
+#' the nominal \eqn{0.05}.
 #' \eqn{T_s} counts disjoint boxes regardless of \code{overlap}. Scales with
 #' \eqn{T_s \le k} return \code{NA} limits with a warning. The analytic interval
 #' can under-cover under strong long-range dependence (estimated DFA exponent
@@ -362,10 +366,11 @@ for(k in 1:np){
 			ols_res<-as.numeric(stats::residuals(stats::lm(data[,1]~data[,-1,drop=FALSE])))
 			rd<-dfa(ols_res,dpo=dpo0,int=TRUE,np=np,overlap=FALSE)
 			ok<-rd$s>=max(10,min(rd$s))&rd$s<=floor(size/10)&rd$F>0
-			# dfa()$F follows the Peng convention (= sqrt(F^2)), so the DFA exponent
-			# is the slope of log F against log s directly.
+			# Read dfa()$F_sqrt (Peng-convention root MS fluctuation) so the slope of
+			# log F_sqrt against log s is the Hurst exponent directly. ($F itself is
+			# F^2 in the 1.x line for backward compatibility.)
 			H_resid<-if(sum(ok)<4) NA_real_ else
-				stats::coef(stats::lm(log(rd$F[ok])~log(rd$s[ok])))[[2]]
+				stats::coef(stats::lm(log(rd$F_sqrt[ok])~log(rd$s[ok])))[[2]]
 		}else H_resid<-H_eps
 		H_raw<-H_resid                              # before clamp/fallback
 		c_factor<-rep(1,np)                         # default: no correction
@@ -461,11 +466,16 @@ for(k in 1:np){
 	if(variance!="none"&&!is.na(H_resid)){
 		Hr<-round(H_resid,2)
 		if(H_resid>=0.99)
-			warning("fracreg(): H_resid = ",Hr," saturated near 1 -- possible ",
-				"non-stationary regime or omitted variable with long memory. ",
-				"Consider (i) a higher detrending order; (ii) the dependent ",
-				"wild bootstrap (fracreg.WB(weights='dependent')); ",
-				"(iii) auditing the model for exogeneity.",call.=FALSE)
+			warning("fracreg(): H_resid = ",Hr," saturated near 1 -- possible causes: ",
+				"(i) a non-stationary (fBm-like) regime; ",
+				"(ii) external smoothing of the series (regulation by a dam, ",
+				"low-pass filtering, interpolation, poorly removed seasonality), ",
+				"which inflates apparent persistence in the OLS residual; ",
+				"(iii) an omitted long-memory covariate; ",
+				"(iv) a short series with trend remnants after detrending. ",
+				"Consider a higher detrending order, the dependent wild bootstrap ",
+				"(fracreg.WB(weights='dependent')), or auditing the data source.",
+				call.=FALSE)
 		else if(H_resid>=0.95)
 			message("fracreg(): H_resid = ",Hr," close to the non-stationary ",
 				"regime; the analytic CIs are conservative. Consider ",
@@ -762,16 +772,25 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
 #'
 #' The C primitive computes the mean squared fluctuation \eqn{F^2(s)} (the
 #' average of the within-box detrended residual variance over the boxes of
-#' size \eqn{s}). The return uses the conventional Peng et al. (1994) form:
+#' size \eqn{s}). The return preserves backward compatibility in this 1.x
+#' line and adds two new fields with the Peng convention:
 #' \itemize{
-#'   \item \code{$F = sqrt(F^2)} -- the root mean-squared fluctuation, so that
-#'         \eqn{\alpha} is the slope of \eqn{\log F(s)} vs \eqn{\log s};
-#'   \item \code{$F2 = F^2} -- the squared fluctuation, the legacy quantity
-#'         consumed internally by the package (\code{rhodcca}, \code{fracreg},
-#'         \dots) and useful for combining DFA values across series;
+#'   \item \code{$F = F^2(s)} -- the mean squared fluctuation, kept for
+#'         backward compatibility with code that consumes \code{$F} as the
+#'         squared quantity (its slope against \eqn{\log s} is \eqn{2\alpha},
+#'         not \eqn{\alpha}). In DFATools 2.0.0 this field will switch to the
+#'         Peng convention; user code that needs the squared form long-term
+#'         should use \code{$F2}.
+#'   \item \code{$F2 = F^2(s)} -- the squared fluctuation under an explicit
+#'         name; useful for combining DFA values across series and for the
+#'         scale-wise covariance machinery internal to the package.
+#'   \item \code{$F_sqrt = sqrt(F^2(s))} -- the Peng-convention
+#'         root mean-squared fluctuation, so that \eqn{\alpha} is the slope
+#'         of \eqn{\log F_{sqrt}(s)} vs \eqn{\log s} directly.
 #'   \item \code{$alpha} -- the estimated DFA exponent (= Hurst exponent for
-#'         self-similar processes), the slope of \eqn{\log F^2(s)/2} against
-#'         \eqn{\log s} over all positive scales.
+#'         self-similar processes), computed once from
+#'         \eqn{\frac{1}{2}\,\mathrm{slope}(\log F^2 \sim \log s)}, equivalent
+#'         to \eqn{\mathrm{slope}(\log F_{sqrt} \sim \log s)}.
 #' }
 #'
 #' @param data a numeric vector or single-column matrix.
@@ -780,9 +799,10 @@ fracreg.WB <- function(data, B = 999, weights = c("dependent", "rademacher", "ma
 #'   standard use for stationary inputs).
 #' @param np number of scales (box sizes).
 #' @param overlap logical; if TRUE overlapping windows are used.
-#' @return A list with the scale vector \code{s}, the fluctuation function
-#'   \code{F}, the squared fluctuation \code{F2} and the estimated DFA exponent
-#'   \code{alpha}.
+#' @return A list with the scale vector \code{s}, the squared fluctuation
+#'   \code{F} (= \code{F2}; switches to the Peng convention in DFATools
+#'   2.0.0), \code{F_sqrt = sqrt(F2)} (Peng convention) and the estimated DFA
+#'   exponent \code{alpha}.
 #' @references
 #' Peng, C.-K., Buldyrev, S. V., Havlin, S., Simons, M., Stanley, H. E. and
 #' Goldberger, A. L. (1994). Mosaic organization of DNA nucleotides.
@@ -829,7 +849,7 @@ Fs<- sqrt(pmax(F2,0))                       # Peng F = sqrt(F^2)
 ok<- is.finite(F2)&F2>0
 alpha<- if(sum(ok)<4) NA_real_ else
 	0.5*unname(stats::coef(stats::lm(log(F2[ok])~log(sn[ok])))[[2]])
-list(s=sn, F=Fs, F2=F2, alpha=alpha)
+list(s=sn, F=F2, F2=F2, F_sqrt=Fs, alpha=alpha)
 }
 #' rho Detrended Cross-Correlation Coefficient
 #'
@@ -1625,7 +1645,7 @@ plotdfa <- function(dfa,seg=FALSE,point=NULL,main=NULL) {
   if(seg){
     ind<-c(rep("A",point),rep("B",length(dfa$s)-point))
     s<-log10(dfa$s)
-    Fl<-log10(dfa$F)
+    Fl<-log10(dfa$F_sqrt)
     df<-cbind.data.frame(s,Fl,ind)
     alfa1<-round(lm(df$Fl~df$s,subset = df$ind=="A")$coefficients[[2]],3)
     alfa2<-round(lm(df$Fl~df$s,subset = df$ind=="B")$coefficients[[2]],3)
@@ -1642,7 +1662,7 @@ plotdfa <- function(dfa,seg=FALSE,point=NULL,main=NULL) {
     p1
   } else {
     s<-log10(dfa$s)
-    Fl<-log10(dfa$F)
+    Fl<-log10(dfa$F_sqrt)
     df<-cbind.data.frame(s,Fl)
     alfa<-round(lm(df$Fl~df$s)$coefficients[[2]],3)
     p1<-ggplot2::ggplot(df,ggplot2::aes(x=s,y=Fl))+
